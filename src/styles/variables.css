@@ -1,0 +1,63 @@
+/* ========================================
+   Variables — Minecraft 像素主题变量
+   ======================================== */
+
+:root {
+  /* === 配色 === */
+  --color-bg:        #1a1a1e;
+  --color-surface:   #2d2a25;
+  --color-surface2:  #252320;
+  --color-border:    #3d3934;
+  --color-border-bright: #56504a;
+
+  --color-primary:   #5b8731;   /* 草绿 */
+  --color-accent:    #ffaa00;   /* 金色高亮 */
+  --color-text:      #e8e4d9;   /* 米白正文 */
+  --color-text-dim:  #9a9590;   /* 次要文字 */
+  --color-danger:    #c0392b;   /* 红石 — 链接/危险 */
+
+  /* === 像素阴影 === */
+  --pixel-shadow-sm: 2px 2px 0 #0a0a0c;
+  --pixel-shadow-md: 4px 4px 0 #0a0a0c;
+  --pixel-border:    0 0 0 2px var(--color-border),
+                     0 0 0 3px var(--color-border-bright);
+
+  /* === 字体 === */
+  --font-display: 'Press Start 2P', 'Courier New', monospace;
+  --font-body:    'VT323', 'Courier New', monospace;
+
+  /* === 字号 === */
+  --text-xs:   0.625rem;
+  --text-sm:   0.875rem;
+  --text-base: 1.25rem;
+  --text-lg:   1.75rem;
+  --text-xl:   2.25rem;
+  --text-2xl:  3rem;
+
+  /* === 间距 === */
+  --space-xs:  0.25rem;
+  --space-sm:  0.5rem;
+  --space-md:  1rem;
+  --space-lg:  1.5rem;
+  --space-xl:  2rem;
+  --space-2xl: 3rem;
+
+  /* === 其他 === */
+  --radius: 0px;  /* 像素风格无圆角 */
+  --transition-step: 0s;  /* 默认无过渡，像素风格阶梯式 */
+}
+
+/* 预留亮色主题变量 */
+[data-theme="light"] {
+  --color-bg:        #c8c8c8;
+  --color-surface:   #dbdbdb;
+  --color-surface2:  #b0b0b0;
+  --color-border:    #8b8b8b;
+  --color-border-bright: #a0a0a0;
+  --color-primary:   #3d6e1a;
+  --color-accent:    #cc8800;
+  --color-text:      #2d2a25;
+  --color-text-dim:  #5a5650;
+  --pixel-shadow-sm: 2px 2px 0 rgba(0,0,0,0.3);
+  --pixel-shadow-md: 4px 4px 0 rgba(0,0,0,0.3);
+}
