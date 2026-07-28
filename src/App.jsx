@@ -1,52 +1,55 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Layout from './components/Layout';
+import AdminGuard from './components/AdminGuard';
 import ParticleBackground from './components/ParticleBackground';
-import Typewriter from './components/Typewriter';
-import AudioPlayer from './components/AudioPlayer';
-import LazyImage from './components/LazyImage';
+import Home from './pages/Home';
+import Photography from './pages/Photography';
+import MovieReviews from './pages/MovieReviews';
+import BookReviews from './pages/BookReviews';
+import ReviewDetail from './pages/ReviewDetail';
+import AdminLayout from './pages/Admin/AdminLayout';
+import AdminLogin from './pages/Admin/AdminLogin';
+import Dashboard from './pages/Admin/Dashboard';
+import PhotosManager from './pages/Admin/PhotosManager';
+import MoviesManager from './pages/Admin/MoviesManager';
+import BooksManager from './pages/Admin/BooksManager';
+import ReviewEditPage from './pages/Admin/ReviewEditPage';
 
 function App() {
   return (
-    <>
-      {/* 背景粒子 */}
+    <BrowserRouter>
       <ParticleBackground count={10} minSize={3} maxSize={5} />
 
-      {/* 主内容 */}
-      <main className="container">
-        <Typewriter as="h1" speed={80} cursor loop={false}>
-          Hello! Sia!
-        </Typewriter>
-        <hr />
-        <h2>here is my first web page</h2>
-        <p>
-          i am sia and this is my first web page, here is some information about
-          me:
-        </p>
-        <p>
-          <a
-            href="https://space.bilibili.com/329907805?spm_id_from=333.1365.0.0"
-            title="bilibili"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <strong>
-              <em>here is my bilibili:</em>
-            </strong>
-          </a>
-        </p>
-        <LazyImage
-          srcSm="/img/optimized/lifestyle-sm.webp"
-          srcMd="/img/optimized/lifestyle-md.webp"
-          srcLg="/img/optimized/lifestyle-lg.webp"
-          placeholder="/img/optimized/lifestyle-placeholder.webp"
-          fallback="/img/138900663_p0.png"
-          alt="my life style"
-          width="800"
-          title="my life style"
-        />
+      <Routes>
+        {/* 前台 */}
+        <Route element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="photography" element={<Photography />} />
+          <Route path="movies" element={<MovieReviews />} />
+          <Route path="movies/:id" element={<ReviewDetail type="movie" />} />
+          <Route path="books" element={<BookReviews />} />
+          <Route path="books/:id" element={<ReviewDetail type="book" />} />
+        </Route>
 
-        {/* 音频 */}
-        <AudioPlayer src="/audio/C418 - Mice on Venus.mp3" />
-      </main>
-    </>
+        {/* 后台 */}
+        <Route path="admin/login" element={<AdminLogin />} />
+        <Route
+          path="admin"
+          element={
+            <AdminGuard>
+              <AdminLayout />
+            </AdminGuard>
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="photos" element={<PhotosManager />} />
+          <Route path="movies" element={<MoviesManager />} />
+          <Route path="movies/:slug" element={<ReviewEditPage type="movie" />} />
+          <Route path="books" element={<BooksManager />} />
+          <Route path="books/:slug" element={<ReviewEditPage type="book" />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 

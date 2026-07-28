@@ -1,0 +1,26 @@
+# Nginx 配置示例 — 放在 /etc/nginx/sites-available/sia-plog
+# 部署前提：npm run build 已生成 dist/ 目录
+
+server {
+    listen 80;
+    server_name your-domain.com;  # 替换为你的域名或 IP
+
+    # 上传的图片
+    location /uploads/ {
+        alias /home/your-user/sia-plog/server/uploads/;
+    }
+
+    # API 转发给 Node.js
+    location /api/ {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # 静态文件 + SPA 回退
+    location / {
+        root /home/your-user/sia-plog/dist;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+    }
+}

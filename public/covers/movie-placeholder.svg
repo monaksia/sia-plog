@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450">
+  <rect fill="#2d2a25" width="300" height="450"/>
+  <rect fill="#3d3934" width="300" height="450" rx="0"/>
+  <text fill="#56504a" font-family="monospace" font-size="40" text-anchor="middle" x="150" y="200">🎬</text>
+  <text fill="#9a9590" font-family="monospace" font-size="12" text-anchor="middle" x="150" y="240">MOVIE</text>
+</svg>

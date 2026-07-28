@@ -1,0 +1,97 @@
+/* === 摄影画廊 === */
+.photo-gallery {
+  margin-top: var(--space-lg);
+}
+
+.photo-gallery img {
+  border: 2px solid var(--color-border);
+  box-shadow: var(--pixel-shadow-sm);
+  margin: 0;
+  cursor: pointer;
+  background: var(--color-surface2);
+  image-rendering: auto;
+}
+
+.photo-gallery img:hover {
+  border-color: var(--color-accent);
+  box-shadow: var(--pixel-shadow-md);
+  transform: translate(-1px, -1px);
+}
+
+/* 灯箱 */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.lightbox-img {
+  max-width: 90vw;
+  max-height: 80vh;
+  object-fit: contain;
+  border: 2px solid var(--color-border-bright);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+  background: var(--color-bg);
+}
+
+.lightbox-close {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  color: var(--color-text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 201;
+}
+
+.lightbox-close:hover {
+  color: var(--color-accent);
+}
+
+.lightbox-prev,
+.lightbox-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--color-text);
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid var(--color-border);
+  padding: var(--space-sm) var(--space-md);
+  cursor: pointer;
+  z-index: 201;
+}
+
+.lightbox-prev { left: var(--space-md); }
+.lightbox-next { right: var(--space-md); }
+
+.lightbox-prev:hover,
+.lightbox-next:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.lightbox-info {
+  margin-top: var(--space-md);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  color: var(--color-text-dim);
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .lightbox-prev,
+  .lightbox-next {
+    font-size: var(--text-sm);
+    padding: var(--space-xs) var(--space-sm);
+  }
+}
