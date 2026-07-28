@@ -1,19 +1,20 @@
-# 🎮 Siablog
+# ❄️ Siablog
 
-> 基于 Vite + React 的个人博客，Minecraft 像素主题风格。
-> 支持摄影画廊、影评、书评，带 SQLite 后端管理后台。
+> 基于 Vite + React 的个人博客，冷调像素主题（Frost Monitor）。
+> 摄影画廊 · 影评 · 书评 · 本地音乐播放器，带 SQLite 后端管理后台。
 
 ---
 
 ## ✨ 功能
 
-- 🏠 **首页** — 打字机标题 + 像素粒子背景 + 音频播放器
-- 📷 **摄影画廊** — 瀑布流布局 + 灯箱预览 + 键盘导航
+- 🏠 **首页** — 打字机标题 + 粒子背景 + 本地音乐播放器
+- 📷 **摄影画廊** — CSS Column 瀑布流 + 灯箱预览 + 键盘左右切换
 - 🎬 **影评** — 卡片网格 + 星级评分 + Markdown 长文详情
-- 📚 **书评** — 竖版封面 + 阅读状态 + Markdown 长文详情
+- 📚 **书评** — 卡片网格 + 星级评分 + Markdown 长文详情
+- 🎵 **本地音乐** — 自动扫描 `public/audio/` 目录，播放列表 + 进度条 + 切歌
 - 🔐 **管理后台** — JWT 登录、照片上传、影评/书评 CRUD 编辑
-- 📱 **响应式** — 移动端汉堡菜单 + 自适应布局
-- 🖼️ **图片优化** — WebP 多尺寸 + 模糊占位懒加载
+- 📱 **响应式** — 移动端汉堡菜单 + 自适应瀑布流
+- 🖼️ **图片优化** — Sharp 批量转 WebP + 响应式懒加载（blur-up 占位）
 
 ---
 
@@ -49,6 +50,29 @@ npm start
 
 ---
 
+## 🎵 本地音乐播放器
+
+将音乐文件放入 `public/audio/` 目录即可在首页播放。支持的格式：
+
+| 格式 | 扩展名 |
+|------|--------|
+| MP3 | `.mp3` |
+| FLAC | `.flac` |
+| WAV | `.wav` |
+| OGG | `.ogg` |
+| AAC | `.aac` |
+| M4A | `.m4a` |
+| WMA | `.wma` |
+
+### 功能特性
+- **播放列表**：自动列出所有音频文件，点击曲目播放
+- **播放控制**：播放/暂停、上一首/下一首
+- **进度条**：点击或拖拽跳转到指定位置
+- **键盘快捷键**：空格键 播放/暂停
+- **自动切换**：当前曲目结束后自动播放列表下一首（循环）
+
+---
+
 ## 🔐 管理员设置
 
 ```bash
@@ -63,11 +87,9 @@ npm run setup <用户名> <新密码>
 
 管理后台功能：
 - **Dashboard** — 各模块数据概览
-- **Photos** — 上传/编辑/删除照片
-- **Movies** — 新建/编辑/删除影评，上传海报
-- **Books** — 新建/编辑/删除书评，上传封面
-
-影评和书评正文支持 **Markdown** 格式。
+- **Photos** — 上传/编辑/删除照片，支持相机型号、地点、拍摄日期、备注
+- **Movies** — 新建/编辑/删除影评，上传海报，Markdown 正文
+- **Books** — 新建/编辑/删除书评，上传封面，Markdown 正文
 
 ---
 
@@ -210,39 +232,40 @@ sia-plog/
 ├── nginx.conf.example            # Nginx 配置模板
 │
 ├── public/                       # 静态资源
-│   ├── audio/                    # 音乐文件
+│   ├── audio/                    # 本地音乐文件（mp3/flac/wav/ogg 等）
 │   ├── img/                      # 图片 + 优化后的 WebP
 │   ├── covers/                   # 影评/书评封面占位图
 │   └── photos/                   # 摄影作品（手动放入）
 │
 ├── server/                       # 后端
 │   ├── index.js                  # Express 入口
-│   ├── db.js                     # SQLite 数据库初始化
-│   ├── auth.js                   # JWT 认证
+│   ├── db.js                     # SQLite 数据库初始化 + Migration
+│   ├── auth.js                   # JWT 签发 + 认证中间件
 │   ├── setup.js                  # 管理员创建脚本
 │   ├── routes/
 │   │   ├── auth.js               # 登录 API
 │   │   ├── photos.js             # 照片 CRUD + 上传
 │   │   ├── movies.js             # 影评 CRUD + 海报上传
-│   │   └── books.js              # 书评 CRUD + 封面上传
+│   │   ├── books.js              # 书评 CRUD + 封面上传
+│   │   └── music.js              # 本地音乐文件列表
 │   └── uploads/                  # 后台上传的图片（gitignored）
 │
 ├── src/                          # 前端
 │   ├── main.jsx                  # React 入口
 │   ├── App.jsx                   # 路由配置
-│   ├── api.js                    # API 客户端（自动回退静态数据）
+│   ├── api.js                    # API 客户端（统一请求 + JWT Token 管理）
 │   ├── components/
-│   │   ├── Navbar.jsx/css        # 像素风格导航栏
+│   │   ├── Navbar.jsx/css        # 导航栏（毛玻璃 + 移动端汉堡菜单）
 │   │   ├── Layout.jsx            # 页面布局壳
-│   │   ├── StarRating.jsx        # 像素星星评分
-│   │   ├── LazyImage.jsx         # 响应式懒加载图片
-│   │   ├── Typewriter.jsx        # 打字机效果
-│   │   ├── AudioPlayer.jsx       # 自定义音频播放器
-│   │   ├── ParticleBackground.jsx # 粒子背景
+│   │   ├── StarRating.jsx        # 星级评分
+│   │   ├── LazyImage.jsx         # 响应式懒加载（blur-up 占位）
+│   │   ├── Typewriter.jsx        # 打字机特效
+│   │   ├── AudioPlayer.jsx       # 本地音乐播放器
+│   │   ├── ParticleBackground.jsx # 浮动粒子背景
 │   │   └── AdminGuard.jsx        # 后台路由守卫
 │   ├── pages/
 │   │   ├── Home.jsx              # 首页
-│   │   ├── Photography.jsx/css   # 摄影画廊页
+│   │   ├── Photography.jsx/css   # 摄影画廊（瀑布流 + 灯箱）
 │   │   ├── MovieReviews.jsx      # 影评列表页
 │   │   ├── BookReviews.jsx       # 书评列表页
 │   │   ├── ReviewDetail.jsx      # 评论详情页（影评/书评复用）
@@ -263,7 +286,7 @@ sia-plog/
 │   │   └── books.js
 │   └── styles/
 │       ├── reset.css
-│       ├── variables.css         # CSS 变量（MC 像素主题）
+│       ├── variables.css         # CSS 变量（Frost Monitor 冷调主题）
 │       └── main.css
 │
 └── scripts/
@@ -279,13 +302,12 @@ sia-plog/
 | 前端框架 | React 19 |
 | 构建工具 | Vite 8 |
 | 路由 | React Router v7 |
-| 样式 | CSS Custom Properties（像素主题） |
-| 画廊 | react-photo-album |
+| 样式 | CSS Custom Properties（Frost Monitor 冷调像素主题） |
 | Markdown | react-markdown |
 | 后端 | Express 5 |
 | 数据库 | SQLite (better-sqlite3) |
 | 认证 | JWT (jsonwebtoken + bcryptjs) |
-| 图片处理 | Sharp（批量转 WebP） |
+| 图片处理 | Sharp（批量转 WebP）|
 | 文件上传 | Multer |
 
 ---
@@ -301,24 +323,55 @@ sia-plog/
 | 表 | 用途 |
 |----|------|
 | `users` | 管理员账户 |
-| `photos` | 摄影作品 |
-| `movies` | 影评（标题、导演、评分、Markdown 正文等） |
-| `books` | 书评（标题、作者、评分、Markdown 正文等） |
+| `photos` | 摄影作品（src、alt、camera、location、date_taken、notes） |
+| `movies` | 影评（标题、导演、演员、类型、评分、Markdown 正文等） |
+| `books` | 书评（标题、作者、出版社、类型、评分、Markdown 正文等） |
 
 ---
 
-## 🎨 主题
+## 🎨 主题 — Frost Monitor
 
-像素风格主题基于 CSS 自定义属性（`src/styles/variables.css`）：
+冷调像素主题基于 CSS 自定义属性（`src/styles/variables.css`），灵感来自 CRT 监视器 + 极简代码编辑器。
 
-- 暗色背景 `#1a1a1e` + 草绿色 `#5b8731` + 金色高亮 `#ffaa00`
-- 像素字体 `Press Start 2P` + `VT323`
-- 像素阴影 `2px 2px 0` + 双层边框
+| 角色 | 色值 | 用途 |
+|------|------|------|
+| Background | `#0b1018` | 深蓝黑底色 |
+| Surface | `#141b25` | 卡片/区块 |
+| Primary | `#5b9bd5` | 冷蓝 — 链接/按钮 |
+| Accent | `#a78bfa` | 淡紫 — 评分/高亮 |
+| Text | `#e2e8f0` | 冷调白正文 |
+| Text Dim | `#7389a5` | 钢蓝灰次要文字 |
 
-预留了 `[data-theme="light"]` 亮色主题变量，切换即可启用。
+**字体**：VT323（展示） + Inter（正文） + JetBrains Mono（等宽/元数据）
+
+**纹理**：细密点阵背景 + CRT 扫描线叠加（桌面端）
+
+---
+
+## 🖼️ 图片优化
+
+```bash
+# 将源图放入 public/img/ 后运行
+npm run optimize-images
+```
+
+脚本会生成 WebP 格式并输出多尺寸变体（400w / 800w / 1200w），前端 `<LazyImage>` 组件自动选择合适尺寸并实现模糊占位懒加载。
 
 ---
 
 ## 📄 License
 
 MIT
+
+---
+
+## 🗓️ 开发日志
+
+| 日期 | 事项 |
+|------|------|
+| 2026-07 | 冷调像素主题重构（Frost Monitor），CRT 扫描线 + 粒子背景 |
+| 2026-07 | 本地音乐播放器取代网易云 API，支持播放列表/进度条/切歌 |
+| 2026-07 | 照片管理后台优化：新增拍摄地点、日期、备注字段 |
+| 2026-07 | 瀑布流画廊 + Magnum 风格灯箱（键盘导航） |
+| 2026-07 | 全栈博客 MVP：摄影/影评/书评 + SQLite + JWT 后台 |
+| 2026-06 | 项目初始化，Vite + React 迁移 |
