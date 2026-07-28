@@ -1,5 +1,6 @@
 import Typewriter from '../components/Typewriter';
 import AudioPlayer from '../components/AudioPlayer';
+import SocialLinks from '../components/SocialLinks';
 
 function Home() {
   return (
@@ -19,15 +20,7 @@ function Home() {
         information about me:
       </p>
 
-      <p>
-        <a
-          href="https://space.bilibili.com/329907805?spm_id_from=333.1365.0.0"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          bilibili ↗
-        </a>
-      </p>
+      <SocialLinks />
 
       <AudioPlayer />
     </div>

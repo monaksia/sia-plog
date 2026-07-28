@@ -461,6 +461,164 @@ img {
 .music-nowplaying audio { display: none; }
 
 /* ===========================
+   Social Beacons — interactive social links
+   =========================== */
+
+.social-beacons {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  margin: var(--space-xl) 0;
+  flex-wrap: wrap;
+}
+
+.social-beacon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface2);
+  border: var(--border-thin);
+  color: var(--color-text-dim);
+  text-decoration: none;
+  transition:
+    border-color var(--transition-base),
+    box-shadow var(--transition-base),
+    transform var(--transition-base),
+    background var(--transition-base);
+  min-width: 0;
+}
+
+.social-beacon:hover {
+  border-color: var(--sb-brand);
+  box-shadow:
+    0 0 20px var(--sb-glow),
+    inset 0 0 20px var(--sb-glow);
+  transform: translateY(-2px);
+  background: var(--color-surface);
+}
+
+/* Icon ring — the frosted frame around each icon */
+.sb-icon-ring {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 1px solid var(--color-border-bright);
+  color: var(--color-text-dim);
+  transition:
+    border-color var(--transition-base),
+    color var(--transition-base),
+    box-shadow var(--transition-base);
+}
+
+/* Radar ping animation */
+.sb-icon-ring::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 1px solid transparent;
+  pointer-events: none;
+}
+
+.social-beacon:hover .sb-icon-ring {
+  border-color: var(--sb-brand);
+  color: var(--sb-brand);
+  box-shadow: 0 0 8px var(--sb-glow);
+}
+
+.social-beacon:hover .sb-icon-ring::after {
+  animation: sb-ping 0.7s cubic-bezier(0, 0.5, 0.3, 1) forwards;
+  border-color: var(--sb-brand);
+}
+
+@keyframes sb-ping {
+  0%   { inset: -1px; opacity: 1; }
+  100% { inset: -10px; opacity: 0; }
+}
+
+.sb-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  z-index: 1;
+  transition: transform var(--transition-base);
+}
+
+.social-beacon:hover .sb-icon {
+  transform: scale(1.12);
+}
+
+/* Text metadata */
+.sb-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.sb-label {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--color-text);
+  letter-spacing: 0.03em;
+  transition: color var(--transition-fast);
+}
+
+.sb-handle {
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  color: var(--color-text-dim);
+  transition: color var(--transition-base);
+  white-space: nowrap;
+}
+
+.social-beacon:hover .sb-handle {
+  color: #8ba0b8;
+}
+
+/* Blinking terminal cursor — appears on hover */
+.sb-cursor {
+  display: inline-block;
+  width: 1px;
+  height: 13px;
+  background: transparent;
+  flex-shrink: 0;
+  align-self: center;
+  margin-left: -2px;
+  transition: background var(--transition-fast);
+}
+
+.social-beacon:hover .sb-cursor {
+  background: var(--sb-brand);
+  animation: sb-blink 1s step-end infinite;
+}
+
+@keyframes sb-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+/* Mobile: stack vertically */
+@media (max-width: 600px) {
+  .social-beacons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .social-beacon {
+    justify-content: flex-start;
+  }
+}
+
+/* ===========================
    Particles
    =========================== */
 
