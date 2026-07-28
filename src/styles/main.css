@@ -1,27 +1,59 @@
 /* ========================================
-   Main — MC 像素主题主样式
+   Main — Frost Monitor 冷调像素主样式
    ======================================== */
 
-/* === Google Fonts Import === */
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+/* === Fonts === */
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* === 背景网格纹理 === */
+/* ===========================
+   Base
+   =========================== */
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: var(--font-body);
   font-size: var(--text-base);
+  font-weight: 400;
   color: var(--color-text);
   background-color: var(--color-bg);
+  /* 细密点阵背景（更小更密，冷色） */
   background-image:
-    /* 像素网格点阵 */
-    radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
-  background-size: 24px 24px;
+    radial-gradient(circle, rgba(91, 155, 213, 0.06) 1px, transparent 1px);
+  background-size: 20px 20px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* === 装饰像素方块背景 === */
+/* === CRT 扫描线纹理（仅桌面端） === */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+}
+
+@media (max-width: 768px) {
+  body::after {
+    display: none; /* 移动端关闭扫描线 */
+  }
+}
+
+/* === 粒子容器 === */
 #particles {
   position: fixed;
   inset: 0;
@@ -30,42 +62,74 @@ body {
   overflow: hidden;
 }
 
-/* === 主容器 === */
+/* ===========================
+   Container — 主内容区
+   =========================== */
+
 .container {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 800px;
-  margin: var(--space-2xl) var(--space-md);
-  padding: var(--space-xl);
+  max-width: var(--content-width);
+  margin: var(--space-2xl) auto;
+  padding: var(--space-2xl);
   background: var(--color-surface);
-  box-shadow:
-    /* 像素双层边框 */
-    0 0 0 2px var(--color-border),
-    0 0 0 4px var(--color-border-bright),
-    /* 立体阴影 */
-    6px 6px 0 #0a0a0c;
-  image-rendering: pixelated;
+  border: var(--border-thin);
 }
 
-/* === 标题 === */
+@media (max-width: 768px) {
+  .container {
+    margin: var(--space-md);
+    padding: var(--space-lg);
+  }
+}
+
+/* ===========================
+   Typography
+   =========================== */
+
 h1 {
   font-family: var(--font-display);
   font-size: var(--text-2xl);
-  color: var(--color-accent);
+  font-weight: 400;
+  color: var(--color-text);
   text-align: center;
-  line-height: 1.4;
-  margin-bottom: var(--space-md);
-  text-shadow: var(--pixel-shadow-sm);
-  letter-spacing: 0.05em;
+  line-height: 1.2;
+  margin-bottom: var(--space-sm);
+  letter-spacing: 0.02em;
 }
 
-/* 打字机光标 */
+h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 400;
+  color: var(--color-text-dim);
+  text-align: center;
+  margin-bottom: var(--space-lg);
+  letter-spacing: 0.03em;
+}
+
+h3 {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--space-sm);
+}
+
+p {
+  font-size: var(--text-base);
+  line-height: 1.8;
+  margin-bottom: var(--space-md);
+  color: var(--color-text);
+}
+
+/* === 打字机光标 === */
 .typewriter-cursor {
   display: inline-block;
-  width: 0.5em;
+  width: 2px;
   height: 1em;
-  background: var(--color-accent);
+  background: var(--color-primary);
   animation: blink 1s step-end infinite;
   vertical-align: text-bottom;
   margin-left: 2px;
@@ -76,86 +140,53 @@ h1 {
   50%      { opacity: 0; }
 }
 
-/* === 分割线 === */
+/* ===========================
+   Dividers
+   =========================== */
+
 hr {
   border: none;
-  height: 2px;
-  background: repeating-linear-gradient(
-    90deg,
-    var(--color-border-bright) 0px,
-    var(--color-border-bright) 8px,
-    transparent 8px,
-    transparent 12px
-  );
-  margin: var(--space-lg) 0;
+  height: 1px;
+  background: var(--color-border);
+  margin: var(--space-xl) 0;
 }
 
-/* === 副标题 === */
-h2 {
-  font-family: var(--font-display);
-  font-size: var(--text-sm);
-  color: var(--color-text-dim);
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: var(--space-lg);
-  text-shadow: 1px 1px 0 var(--color-surface2);
-}
+/* ===========================
+   Links
+   =========================== */
 
-/* === 正文 === */
-p {
-  font-size: var(--text-lg);
-  line-height: 1.6;
-  margin-bottom: var(--space-md);
-  color: var(--color-text);
-}
-
-/* === 链接 === */
 a {
   color: var(--color-primary);
-  font-family: var(--font-display);
-  font-size: var(--text-sm);
-  display: inline-block;
-  padding: var(--space-xs) var(--space-sm);
-  border: 2px solid var(--color-primary);
-  box-shadow: var(--pixel-shadow-sm);
-  transition: none;
-  background: var(--color-surface2);
-  image-rendering: pixelated;
+  text-decoration: none;
+  transition: color var(--transition-fast);
 }
 
 a:hover {
   color: var(--color-accent);
-  border-color: var(--color-accent);
-  box-shadow: var(--pixel-shadow-md);
-  transform: translate(-1px, -1px);
-  background: var(--color-surface);
 }
 
-a:active {
-  box-shadow: none;
-  transform: translate(2px, 2px);
-}
+/* ===========================
+   Images
+   =========================== */
 
-/* === 图片 === */
 img {
   display: block;
   max-width: 100%;
   height: auto;
-  border: 2px solid var(--color-border);
-  box-shadow: var(--pixel-shadow-md);
-  margin: var(--space-lg) auto;
+  border: var(--border-thin);
   image-rendering: auto;
   background: var(--color-surface2);
 }
 
-/* === 懒加载图片（blur-up 效果）=== */
+/* ===========================
+   LazyImage (blur-up)
+   =========================== */
+
 .lazy-image-wrapper {
   position: relative;
   overflow: hidden;
   margin: var(--space-lg) auto;
-  border: 2px solid var(--color-border);
-  box-shadow: var(--pixel-shadow-md);
+  border: var(--border-thin);
   background: var(--color-surface2);
   line-height: 0;
 }
@@ -167,9 +198,8 @@ img {
   height: 100% !important;
   object-fit: cover;
   filter: blur(20px);
-  transform: scale(1.1); /* 避免模糊边缘露白 */
+  transform: scale(1.1);
   border: none !important;
-  box-shadow: none !important;
   margin: 0 !important;
   transition: opacity 0.4s ease;
   z-index: 1;
@@ -193,105 +223,261 @@ img {
 
 .lazy-image-picture img {
   border: none;
-  box-shadow: none;
   margin: 0;
   width: 100%;
 }
 
-/* === 音频播放器容器 === */
-.audio-player {
-  margin: var(--space-lg) auto;
+/* ===========================
+   Music Player — Search + Play
+   =========================== */
+
+.music-player {
+  margin: var(--space-xl) auto 0;
+  max-width: 480px;
+  width: 100%;
+}
+
+/* Search */
+.music-search {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.music-search-input {
+  flex: 1;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface2);
+  border: var(--border-thin);
+  color: var(--color-text);
+  min-width: 0;
+}
+
+.music-search-input:focus {
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+.music-search-input::placeholder {
+  color: var(--color-text-dim);
+}
+
+.music-search-btn {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  color: var(--color-primary);
+  border: var(--border-thin);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.music-search-btn:hover {
+  background: rgba(91, 155, 213, 0.1);
+  color: var(--color-text);
+}
+
+.music-search-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Results */
+.music-results {
+  margin-top: var(--space-sm);
+  border: var(--border-thin);
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--color-surface2);
+}
+
+.music-track {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-body);
+  transition: background var(--transition-fast);
+}
+
+.music-track:last-child { border-bottom: none; }
+
+.music-track:hover { background: rgba(91, 155, 213, 0.06); }
+
+.music-track:disabled { opacity: 0.5; cursor: default; }
+
+.music-track-name {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music-track-artist {
+  font-size: var(--text-xs);
+  color: var(--color-text-dim);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music-track-dur {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--color-text-dim);
+  flex-shrink: 0;
+}
+
+/* Error & Hint */
+.music-error {
+  margin-top: var(--space-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-danger);
+  text-align: center;
+}
+
+.music-hint {
+  margin-top: var(--space-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-dim);
+  text-align: center;
+}
+
+.music-loading {
+  margin-top: var(--space-md);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-dim);
+  text-align: center;
+}
+
+/* Now Playing */
+.music-nowplaying {
+  margin-top: var(--space-md);
   padding: var(--space-md);
   background: var(--color-surface2);
-  border: 2px solid var(--color-border);
-  box-shadow: var(--pixel-shadow-sm);
+  border: var(--border-thin);
+}
+
+.music-back-btn {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  background: none;
+  border: none;
+  color: var(--color-text-dim);
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: var(--space-sm);
+  transition: color var(--transition-fast);
+}
+
+.music-back-btn:hover { color: var(--color-primary); }
+
+.music-track-info {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
-  max-width: 480px;
+  gap: 2px;
+  margin-bottom: var(--space-md);
 }
 
-.audio-player audio {
-  display: none;
+.music-np-name {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--color-text);
+  line-height: 1.3;
 }
 
-.audio-controls {
+.music-np-artist {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-dim);
+}
+
+/* Controls */
+.music-controls {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
 }
 
-.audio-btn {
+.music-play-btn {
   font-family: var(--font-display);
-  font-size: var(--text-xs);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--color-surface);
-  color: var(--color-text);
-  border: 2px solid var(--color-border-bright);
-  box-shadow: var(--pixel-shadow-sm);
+  font-size: 1rem;
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  color: var(--color-primary);
+  border: var(--border-thin);
   cursor: pointer;
-  white-space: nowrap;
-  image-rendering: pixelated;
-  min-width: 70px;
+  min-width: 36px;
   text-align: center;
+  line-height: 1;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
-.audio-btn:hover {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: #fff;
-  box-shadow: var(--pixel-shadow-md);
-  transform: translate(-1px, -1px);
+.music-play-btn:hover {
+  background: rgba(91, 155, 213, 0.1);
+  color: var(--color-text);
 }
 
-.audio-btn:active {
-  box-shadow: none;
-  transform: translate(2px, 2px);
-}
-
-.audio-label {
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  color: var(--color-text-dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.music-progress {
   flex: 1;
-}
-
-/* === 进度条 === */
-.progress-bar {
-  width: 100%;
-  height: 12px;
-  background: var(--color-surface);
-  border: 2px solid var(--color-border);
+  height: 4px;
+  background: var(--color-border);
   cursor: pointer;
   position: relative;
-  image-rendering: pixelated;
 }
 
-.progress-fill {
+.music-progress-fill {
   height: 100%;
   background: var(--color-primary);
   width: 0%;
-  transition: none;
+  transition: width 0.1s linear;
 }
 
-.progress-fill.playing {
-  background: var(--color-accent);
+.music-time {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--color-text-dim);
+  min-width: 36px;
+  text-align: right;
 }
 
-/* === 粒子像素方块 === */
+.music-nowplaying audio { display: none; }
+
+/* ===========================
+   Particles
+   =========================== */
+
 .dirt-particle {
   position: absolute;
-  background: var(--color-border-bright);
+  background: rgba(91, 155, 213, 0.3);
   image-rendering: pixelated;
-  opacity: 0.5;
+  opacity: 0.4;
   animation: float-up linear infinite;
 }
 
 .dirt-particle:nth-child(odd) {
-  background: var(--color-text-dim);
+  background: rgba(167, 139, 250, 0.2);
+}
+
+.dirt-particle:nth-child(3n) {
+  background: rgba(115, 137, 165, 0.25);
 }
 
 @keyframes float-up {
@@ -300,10 +486,10 @@ img {
     opacity: 0;
   }
   10% {
-    opacity: 0.6;
+    opacity: 0.5;
   }
   90% {
-    opacity: 0.2;
+    opacity: 0.15;
   }
   100% {
     transform: translateY(-110vh) rotate(90deg);
@@ -311,36 +497,20 @@ img {
   }
 }
 
-/* === 响应式 === */
-@media (max-width: 640px) {
+/* ===========================
+   Responsive
+   =========================== */
+
+@media (max-width: 768px) {
   :root {
     --text-2xl: 1.75rem;
     --text-xl: 1.3rem;
     --text-lg: 1.1rem;
-    --text-base: 1rem;
-    --text-sm: 0.7rem;
-    --text-xs: 0.55rem;
+    --text-base: 0.95rem;
   }
 
   .container {
-    margin: var(--space-md);
+    margin: var(--space-sm);
     padding: var(--space-md);
-    box-shadow:
-      0 0 0 2px var(--color-border),
-      0 0 0 3px var(--color-border-bright),
-      4px 4px 0 #0a0a0c;
-  }
-
-  .audio-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .audio-btn {
-    text-align: center;
-  }
-
-  .audio-label {
-    text-align: center;
   }
 }

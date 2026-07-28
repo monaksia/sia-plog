@@ -5,6 +5,7 @@ import authRoutes from './routes/auth.js';
 import photoRoutes from './routes/photos.js';
 import movieRoutes from './routes/movies.js';
 import bookRoutes from './routes/books.js';
+import musicRoutes from './routes/music.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -18,6 +19,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/photos', photoRoutes);
 app.use('/api/movies', movieRoutes);
 app.use('/api/books', bookRoutes);
+app.use('/api/music', musicRoutes);
 
 // 上传文件静态访问
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

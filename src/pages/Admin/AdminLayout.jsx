@@ -13,19 +13,19 @@ function AdminLayout() {
   return (
     <div className="admin-container">
       <aside className="admin-sidebar">
-        <h2 className="admin-logo">Sia Admin</h2>
+        <h2 className="admin-logo">sia:admin</h2>
         <nav className="admin-nav">
           <NavLink to="/admin" end className={({ isActive }) => isActive ? 'active' : ''}>
-            📊 Dashboard
+            Dashboard
           </NavLink>
           <NavLink to="/admin/photos" className={({ isActive }) => isActive ? 'active' : ''}>
-            📷 Photos
+            Photos
           </NavLink>
           <NavLink to="/admin/movies" className={({ isActive }) => isActive ? 'active' : ''}>
-            🎬 Movies
+            Movies
           </NavLink>
           <NavLink to="/admin/books" className={({ isActive }) => isActive ? 'active' : ''}>
-            📚 Books
+            Books
           </NavLink>
         </nav>
         <button className="admin-logout" onClick={handleLogout}>登出</button>

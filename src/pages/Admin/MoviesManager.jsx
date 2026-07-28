@@ -19,7 +19,7 @@ function MoviesManager() {
 
   return (
     <div>
-      <h1>🎬 Movies</h1>
+      <h1>Movies</h1>
       <hr />
       <div className="admin-toolbar">
         <Link to="/admin/movies/new" className="admin-btn">+ 新建影评</Link>

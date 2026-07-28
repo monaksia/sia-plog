@@ -67,11 +67,11 @@ function ReviewEditor({ type, initial, onSave, onDelete }) {
       </div>
       <div className="admin-editor-actions">
         <button type="submit" className="admin-btn" disabled={saving}>
-          {saving ? '保存中...' : '💾 保存'}
+          {saving ? '保存中...' : 'Save'}
         </button>
         {onDelete && (
           <button type="button" className="admin-btn danger" onClick={onDelete}>
-            🗑 删除
+            Delete
           </button>
         )}
       </div>

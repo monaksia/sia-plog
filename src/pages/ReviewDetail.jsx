@@ -31,7 +31,7 @@ function ReviewDetail({ type }) {
       <div className="container">
         <h1>Not Found</h1>
         <p>Review not found.</p>
-        <Link to={`/${isMovie ? 'movies' : 'books'}`} className="review-detail-back">← Back</Link>
+        <Link to={`/${isMovie ? 'movies' : 'books'}`} className="review-detail-back">← Back to {isMovie ? 'movies' : 'books'}</Link>
       </div>
     );
   }
@@ -39,7 +39,7 @@ function ReviewDetail({ type }) {
   return (
     <div className="container">
       <Link to={`/${isMovie ? 'movies' : 'books'}`} className="review-detail-back">
-        ← Back to {isMovie ? 'Movies' : 'Books'}
+        ← Back to {isMovie ? 'movies' : 'books'}
       </Link>
 
       <div className="review-detail-header">

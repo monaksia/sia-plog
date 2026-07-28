@@ -13,6 +13,9 @@ const photos = [
     width: 1805,
     height: 1205,
     camera: '',
+    location: '',
+    date_taken: '',
+    notes: '',
   },
   // 示例（替换为你的真实照片）：
   // {

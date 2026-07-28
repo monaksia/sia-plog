@@ -1,63 +1,54 @@
 /* ========================================
-   Variables — Minecraft 像素主题变量
+   Variables — Frost Monitor 冷调像素主题
    ======================================== */
 
 :root {
-  /* === 配色 === */
-  --color-bg:        #1a1a1e;
-  --color-surface:   #2d2a25;
-  --color-surface2:  #252320;
-  --color-border:    #3d3934;
-  --color-border-bright: #56504a;
+  /* === 配色 — Frost Monitor === */
+  --color-bg:        #0b1018;   /* 深蓝黑底色 */
+  --color-surface:   #141b25;   /* 卡片/区块表面 */
+  --color-surface2:  #1a2330;   /* 次级表面（input/code 背景） */
+  --color-border:    #1e2c3a;   /* 薄冷色分割线 */
+  --color-border-bright: #2a3d52; /* 悬停/亮态边框 */
 
-  --color-primary:   #5b8731;   /* 草绿 */
-  --color-accent:    #ffaa00;   /* 金色高亮 */
-  --color-text:      #e8e4d9;   /* 米白正文 */
-  --color-text-dim:  #9a9590;   /* 次要文字 */
-  --color-danger:    #c0392b;   /* 红石 — 链接/危险 */
+  --color-primary:   #5b9bd5;   /* 冷蓝 — 链接/按钮 */
+  --color-accent:    #a78bfa;   /* 淡紫 — 评分/高亮 */
+  --color-text:      #e2e8f0;   /* 冷调白正文 */
+  --color-text-dim:  #7389a5;   /* 钢蓝灰次要文字 */
+  --color-danger:    #e0556a;   /* 错误/删除 */
 
-  /* === 像素阴影 === */
-  --pixel-shadow-sm: 2px 2px 0 #0a0a0c;
-  --pixel-shadow-md: 4px 4px 0 #0a0a0c;
-  --pixel-border:    0 0 0 2px var(--color-border),
-                     0 0 0 3px var(--color-border-bright);
+  /* === 边框 — 极简细线 === */
+  --border-thin: 1px solid var(--color-border);
+  --border-focus: 1px solid var(--color-primary);
+  --border-glow: 0 0 0 1px var(--color-border), 0 0 12px rgba(91, 155, 213, 0.12);
 
   /* === 字体 === */
-  --font-display: 'Press Start 2P', 'Courier New', monospace;
-  --font-body:    'VT323', 'Courier New', monospace;
+  --font-display: 'VT323', 'Courier New', monospace;
+  --font-body:    'Inter', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
 
-  /* === 字号 === */
-  --text-xs:   0.625rem;
-  --text-sm:   0.875rem;
-  --text-base: 1.25rem;
-  --text-lg:   1.75rem;
-  --text-xl:   2.25rem;
-  --text-2xl:  3rem;
+  /* === 字号（内容导向，偏大行宽）=== */
+  --text-xs:   0.75rem;    /* 辅助标签 */
+  --text-sm:   0.875rem;   /* 元数据 */
+  --text-base: 1rem;       /* 正文 */
+  --text-lg:   1.25rem;    /* 摘要/引言 */
+  --text-xl:   1.75rem;    /* 页面标题 */
+  --text-2xl:  2.5rem;     /* Hero 大标题 */
 
-  /* === 间距 === */
+  /* === 间距（8px 栅格）=== */
   --space-xs:  0.25rem;
   --space-sm:  0.5rem;
   --space-md:  1rem;
   --space-lg:  1.5rem;
   --space-xl:  2rem;
   --space-2xl: 3rem;
+  --space-3xl: 4rem;
+
+  /* === 阅读宽度 === */
+  --content-width: 680px;
+  --content-wide: 960px;
 
   /* === 其他 === */
-  --radius: 0px;  /* 像素风格无圆角 */
-  --transition-step: 0s;  /* 默认无过渡，像素风格阶梯式 */
-}
-
-/* 预留亮色主题变量 */
-[data-theme="light"] {
-  --color-bg:        #c8c8c8;
-  --color-surface:   #dbdbdb;
-  --color-surface2:  #b0b0b0;
-  --color-border:    #8b8b8b;
-  --color-border-bright: #a0a0a0;
-  --color-primary:   #3d6e1a;
-  --color-accent:    #cc8800;
-  --color-text:      #2d2a25;
-  --color-text-dim:  #5a5650;
-  --pixel-shadow-sm: 2px 2px 0 rgba(0,0,0,0.3);
-  --pixel-shadow-md: 4px 4px 0 rgba(0,0,0,0.3);
+  --radius: 0px;       /* 像素风格保持无圆角 */
+  --transition-fast: 120ms ease;
+  --transition-base: 200ms ease;
 }

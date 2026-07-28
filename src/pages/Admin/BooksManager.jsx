@@ -19,7 +19,7 @@ function BooksManager() {
 
   return (
     <div>
-      <h1>📚 Books</h1>
+      <h1>Books</h1>
       <hr />
       <div className="admin-toolbar">
         <Link to="/admin/books/new" className="admin-btn">+ 新建书评</Link>

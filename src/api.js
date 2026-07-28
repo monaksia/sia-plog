@@ -57,3 +57,6 @@ export const createBook = (data) => request('POST', '/books', data);
 export const updateBook = (slug, data) => request('PUT', `/books/${slug}`, data);
 export const deleteBook = (slug) => request('DELETE', `/books/${slug}`);
 export const uploadBookCover = (slug, formData) => request('POST', `/books/${slug}/cover`, formData);
+
+// Music (local files)
+export const getLocalMusic = () => request('GET', '/music/local');

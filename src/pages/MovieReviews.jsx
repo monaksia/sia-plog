@@ -22,9 +22,9 @@ function MovieReviews() {
 
   return (
     <div className="container">
-      <h1>🎬 Movie Reviews</h1>
+      <h1>Movies</h1>
+      <p className="home-subtitle">电影 · 剧集 · 纪录片</p>
       <hr />
-      <p>电影 · 剧集 · 纪录片</p>
 
       <div className="review-grid">
         {movies.map((movie) => (

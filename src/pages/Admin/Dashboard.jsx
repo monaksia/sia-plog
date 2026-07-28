@@ -17,17 +17,17 @@ function Dashboard() {
       <hr />
       <div className="admin-stats">
         <Link to="/admin/photos" className="admin-stat-card">
-          <span className="stat-icon">📷</span>
+          <span className="stat-icon">■</span>
           <span className="stat-num">{counts.photos}</span>
           <span className="stat-label">Photos</span>
         </Link>
         <Link to="/admin/movies" className="admin-stat-card">
-          <span className="stat-icon">🎬</span>
+          <span className="stat-icon">▶</span>
           <span className="stat-num">{counts.movies}</span>
           <span className="stat-label">Movies</span>
         </Link>
         <Link to="/admin/books" className="admin-stat-card">
-          <span className="stat-icon">📚</span>
+          <span className="stat-icon">◆</span>
           <span className="stat-num">{counts.books}</span>
           <span className="stat-label">Books</span>
         </Link>

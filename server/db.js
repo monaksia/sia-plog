@@ -25,6 +25,9 @@ db.exec(`
     src TEXT NOT NULL,
     alt TEXT DEFAULT '',
     camera TEXT DEFAULT '',
+    location TEXT DEFAULT '',
+    date_taken TEXT DEFAULT '',
+    notes TEXT DEFAULT '',
     width INTEGER DEFAULT 1200,
     height INTEGER DEFAULT 800,
     sort_order INTEGER DEFAULT 0,
@@ -67,6 +70,19 @@ db.exec(`
     updated_at TEXT DEFAULT (datetime('now'))
   );
 `);
+
+// Migration: safely add new columns to existing tables
+function safeAlter(table, column, type) {
+  try {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+  } catch (_) {
+    // column already exists — ignore
+  }
+}
+
+safeAlter('photos', 'location', "TEXT DEFAULT ''");
+safeAlter('photos', 'date_taken', "TEXT DEFAULT ''");
+safeAlter('photos', 'notes', "TEXT DEFAULT ''");
 
 // 插入示例数据（仅首次）
 const userCount = db.prepare('SELECT COUNT(*) as c FROM users').get();

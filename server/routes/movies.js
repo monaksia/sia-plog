@@ -35,7 +35,7 @@ router.get('/:slug', (req, res) => {
 
 // 管理员：创建
 router.post('/', requireAuth, (req, res) => {
-  const slug = req.body.slug || req.body.title?.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '') || '';
+  const slug = req.body.slug || req.body.title?.toLowerCase().replace(/\s+/g, '-').replace(/[^\w一-鿿-]/g, '') || Date.now().toString(36);
   try {
     db.prepare(`
       INSERT INTO movies (slug, title, title_en, poster, year, director, cast, genre, rating, tags, excerpt, review)

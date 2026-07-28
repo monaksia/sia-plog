@@ -22,6 +22,7 @@ function ReviewEditPage({ type }) {
 
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(!isNew);
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     if (isNew) { setItem(null); setLoading(false); return; }
@@ -30,8 +31,9 @@ function ReviewEditPage({ type }) {
       .then((data) => {
         setItem({
           ...data,
-          genre: Array.isArray(data.genre) ? data.genre.join(', ') : '',
-          tags: Array.isArray(data.tags) ? data.tags.join(', ') : '',
+          genre: Array.isArray(data.genre) ? data.genre.join(', ') : (data.genre || ''),
+          tags: Array.isArray(data.tags) ? data.tags.join(', ') : (data.tags || ''),
+          cast: Array.isArray(data.cast) ? data.cast.join(', ') : (data.cast || ''),
         });
       })
       .catch(() => navigate(`/admin/${type}s`))
@@ -39,14 +41,19 @@ function ReviewEditPage({ type }) {
   }, [slug, isNew, isMovie, navigate, type]);
 
   const handleSave = async (formData) => {
-    if (isNew) {
-      const creator = isMovie ? createMovie : createBook;
-      const result = await creator(formData);
-      navigate(`/admin/${type}s/${result.slug}`, { replace: true });
-    } else {
-      const updater = isMovie ? updateMovie : updateBook;
-      await updater(slug, formData);
-      alert('已保存');
+    setSaveError('');
+    try {
+      if (isNew) {
+        const creator = isMovie ? createMovie : createBook;
+        const result = await creator(formData);
+        navigate(`/admin/${type}s/${result.slug}`, { replace: true });
+      } else {
+        const updater = isMovie ? updateMovie : updateBook;
+        await updater(slug, formData);
+        alert('已保存');
+      }
+    } catch (err) {
+      setSaveError(err.message || '保存失败，请检查网络或重新登录');
     }
   };
 
@@ -61,11 +68,9 @@ function ReviewEditPage({ type }) {
     const file = e.target.files[0];
     if (!file) return;
     const uploader = isMovie ? uploadMoviePoster : uploadBookCover;
-    const result = await uploader(slug, new FormData());
-    // 重新 append file（因为上面 new FormData() 是空的）
     const fd = new FormData();
     fd.append('image', file);
-    const uploadResult = await (isMovie ? uploadMoviePoster : uploadBookCover)(slug, fd);
+    const uploadResult = await uploader(slug, fd);
     setItem({ ...item, [isMovie ? 'poster' : 'cover']: uploadResult.src });
   };
 
@@ -84,6 +89,7 @@ function ReviewEditPage({ type }) {
           {item && <img src={item[isMovie ? 'poster' : 'cover'] || ''} alt="" className="admin-thumb" />}
         </div>
       )}
+      {saveError && <p className="admin-error" style={{marginBottom: 'var(--space-md)'}}>{saveError}</p>}
       <ReviewEditor
         type={type}
         initial={item}

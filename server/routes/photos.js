@@ -30,11 +30,11 @@ router.get('/', (_req, res) => {
 router.post('/', requireAuth, upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请选择图片' });
 
-  const { alt, camera, width, height } = req.body;
+  const { alt, camera, location, date_taken, notes, width, height } = req.body;
   const src = '/uploads/' + req.file.filename;
   const result = db.prepare(
-    'INSERT INTO photos (src, alt, camera, width, height) VALUES (?, ?, ?, ?, ?)'
-  ).run(src, alt || '', camera || '', parseInt(width) || 1200, parseInt(height) || 800);
+    'INSERT INTO photos (src, alt, camera, location, date_taken, notes, width, height) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(src, alt || '', camera || '', location || '', date_taken || '', notes || '', parseInt(width) || 1200, parseInt(height) || 800);
 
   const photo = db.prepare('SELECT * FROM photos WHERE id = ?').get(result.lastInsertRowid);
   res.status(201).json(photo);
@@ -42,9 +42,9 @@ router.post('/', requireAuth, upload.single('image'), (req, res) => {
 
 // 管理员：更新照片信息
 router.put('/:id', requireAuth, (req, res) => {
-  const { alt, camera, sort_order } = req.body;
-  db.prepare('UPDATE photos SET alt=?, camera=?, sort_order=? WHERE id=?')
-    .run(alt || '', camera || '', sort_order || 0, req.params.id);
+  const { alt, camera, location, date_taken, notes, sort_order } = req.body;
+  db.prepare('UPDATE photos SET alt=?, camera=?, location=?, date_taken=?, notes=?, sort_order=? WHERE id=?')
+    .run(alt || '', camera || '', location || '', date_taken || '', notes || '', sort_order || 0, req.params.id);
   res.json({ ok: true });
 });
 

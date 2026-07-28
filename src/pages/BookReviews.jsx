@@ -21,9 +21,9 @@ function BookReviews() {
 
   return (
     <div className="container">
-      <h1>📚 Book Reviews</h1>
+      <h1>Books</h1>
+      <p className="home-subtitle">阅读 · 思考 · 笔记</p>
       <hr />
-      <p>阅读 · 思考 · 笔记</p>
 
       <div className="review-grid">
         {books.map((book) => (

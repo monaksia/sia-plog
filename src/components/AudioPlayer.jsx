@@ -1,106 +1,184 @@
-import { useRef, useState, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { getLocalMusic } from '../api';
 
-/**
- * 自定义像素风格音频播放器
- * @param {string} src - 音频文件路径
- */
-function AudioPlayer({ src }) {
-  const audioRef = useRef(null);
-  const progressRef = useRef(null);
+function formatTime(seconds) {
+  if (!seconds || !isFinite(seconds)) return '0:00';
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function AudioPlayer() {
+  const [tracks, setTracks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentIdx, setCurrentIdx] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isEnded, setIsEnded] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const filename = src
-    ? src.split('/').pop().replace(/\.[^.]+$/, '')
-    : 'Unknown Track';
+  const audioRef = useRef(null);
+  const progressRef = useRef(null);
 
-  // 空格键控制
+  const currentTrack = tracks[currentIdx] || null;
+
+  // 加载本地曲库
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.code === 'Space' && e.target === document.body) {
-        e.preventDefault();
-        const audio = audioRef.current;
-        if (!audio) return;
-        audio.paused ? audio.play() : audio.pause();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    getLocalMusic()
+      .then((data) => setTracks(data.files || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  const handlePlayPause = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (audio.paused) {
-      audio.play();
+  // Time update
+  const handleTimeUpdate = useCallback(() => {
+    const a = audioRef.current;
+    if (!a || !a.duration) return;
+    setProgress((a.currentTime / a.duration) * 100);
+  }, []);
+
+  const handleEnded = useCallback(() => {
+    setIsPlaying(false);
+    setIsEnded(true);
+    setProgress(100);
+  }, []);
+
+  const handleError = useCallback(() => {
+    setIsPlaying(false);
+    console.error('Audio playback error');
+  }, []);
+
+  const handlePlaying = useCallback(() => {
+    setIsPlaying(true);
+    setIsEnded(false);
+  }, []);
+
+  // Play/pause
+  const togglePlay = useCallback(() => {
+    const a = audioRef.current;
+    if (!a || !currentTrack) return;
+    if (isEnded) {
+      a.currentTime = 0;
+      setIsEnded(false);
+    }
+    if (a.paused) {
+      a.play().then(() => setIsPlaying(true)).catch(() => {});
     } else {
-      audio.pause();
+      a.pause();
+      setIsPlaying(false);
     }
-  };
+  }, [isEnded, currentTrack]);
 
-  const handleTimeUpdate = () => {
-    const audio = audioRef.current;
-    if (audio && audio.duration) {
-      setProgress((audio.currentTime / audio.duration) * 100);
-    }
-  };
+  // Space bar
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === ' ' && e.target === document.body && currentTrack) {
+        e.preventDefault();
+        togglePlay();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [togglePlay, currentTrack]);
 
-  const handleProgressClick = (e) => {
-    const audio = audioRef.current;
+  // Progress bar click
+  const seek = useCallback((e) => {
     const bar = progressRef.current;
-    if (!audio || !bar) return;
+    const a = audioRef.current;
+    if (!bar || !a || !a.duration) return;
     const rect = bar.getBoundingClientRect();
     const ratio = (e.clientX - rect.left) / rect.width;
-    audio.currentTime = ratio * audio.duration;
-  };
+    a.currentTime = ratio * a.duration;
+  }, []);
 
-  const buttonLabel = isEnded ? '↺ REPLAY' : isPlaying ? '⏸ PAUSE' : '▶ PLAY';
+  // Select track
+  const playTrack = useCallback((idx) => {
+    setCurrentIdx(idx);
+    setIsPlaying(false);
+    setIsEnded(false);
+    setProgress(0);
+  }, []);
+
+  // 上一首 / 下一首
+  const prevTrack = useCallback(() => {
+    if (tracks.length === 0) return;
+    const next = currentIdx <= 0 ? tracks.length - 1 : currentIdx - 1;
+    playTrack(next);
+  }, [currentIdx, tracks.length, playTrack]);
+
+  const nextTrack = useCallback(() => {
+    if (tracks.length === 0) return;
+    const next = currentIdx >= tracks.length - 1 ? 0 : currentIdx + 1;
+    playTrack(next);
+  }, [currentIdx, tracks.length, playTrack]);
+
+  if (loading) {
+    return (
+      <div className="music-player">
+        <p className="music-hint">加载曲库...</p>
+      </div>
+    );
+  }
+
+  if (tracks.length === 0) {
+    return (
+      <div className="music-player">
+        <p className="music-hint">暂无本地音乐，将文件放入 public/audio/ 目录</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="audio-player">
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+    <div className="music-player">
+      {/* Playlist */}
+      {!currentTrack && (
+        <div className="music-results">
+          {tracks.map((track, idx) => (
+            <button
+              key={track.id}
+              className="music-track"
+              onClick={() => playTrack(idx)}
+            >
+              <span className="music-track-name">{track.name}</span>
+              <span className="music-track-dur">▶</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Now Playing */}
+      {currentTrack && (
+        <div className="music-nowplaying">
+          <button className="music-back-btn" onClick={() => setCurrentIdx(-1)}>
+            ← 播放列表
+          </button>
+
+          <div className="music-track-info">
+            <span className="music-np-name">{currentTrack.name}</span>
+          </div>
+
+          <div className="music-controls">
+            <button className="music-play-btn" onClick={prevTrack}>⏮</button>
+            <button className="music-play-btn" onClick={togglePlay}>
+              {isEnded ? '↺' : isPlaying ? '⏸' : '▶'}
+            </button>
+            <button className="music-play-btn" onClick={nextTrack}>⏭</button>
+            <div className="music-progress" ref={progressRef} onClick={seek}>
+              <div className="music-progress-fill" style={{ width: `${progress}%` }} />
+            </div>
+            <span className="music-time">{formatTime(audioRef.current?.currentTime || 0)}</span>
+          </div>
+        </div>
+      )}
+
       <audio
         ref={audioRef}
-        controls
-        loop
-        preload="metadata"
-        onPlay={() => {
-          setIsPlaying(true);
-          setIsEnded(false);
-        }}
-        onPause={() => setIsPlaying(false)}
-        onEnded={() => {
-          setIsPlaying(false);
-          setIsEnded(true);
-        }}
+        src={currentTrack ? currentTrack.url : undefined}
         onTimeUpdate={handleTimeUpdate}
-      >
-        <source src={src} type="audio/mp3" />
-        your browser does not support audio playback
-      </audio>
-
-      <div className="audio-controls">
-        <button className="audio-btn" onClick={handlePlayPause}>
-          {buttonLabel}
-        </button>
-        <span className="audio-label">{filename}</span>
-      </div>
-
-      <div
-        className="progress-bar"
-        ref={progressRef}
-        onClick={handleProgressClick}
-        role="progressbar"
-        aria-valuenow={Math.round(progress)}
-        aria-valuemin={0}
-        aria-valuemax={100}
-      >
-        <div
-          className={`progress-fill${isPlaying ? ' playing' : ''}`}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+        onEnded={handleEnded}
+        onError={handleError}
+        onPlaying={handlePlaying}
+        preload="auto"
+      />
     </div>
   );
 }
