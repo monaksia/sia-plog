@@ -5,6 +5,9 @@ server {
     listen 80;
     server_name your-domain.com;  # 替换为你的域名或 IP
 
+    # 上传文件大小限制（默认 1M，照片需要更大）
+    client_max_body_size 20m;
+
     # 上传的图片
     location /uploads/ {
         alias /home/your-user/sia-plog/server/uploads/;
