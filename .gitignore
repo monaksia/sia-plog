@@ -4,6 +4,8 @@ dist.zip
 *.zip
 .vite
 server/data.db
+server/data.db-wal
+server/data.db-shm
 server/uploads/*.jpg
 server/uploads/*.jpeg
 server/uploads/*.png

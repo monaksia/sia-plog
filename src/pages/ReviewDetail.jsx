@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import StarRating from '../components/StarRating';
 import { getMovie, getBook } from '../api';
+import staticMovies from '../data/movies';
+import staticBooks from '../data/books';
 
 function ReviewDetail({ type }) {
   const { id } = useParams();
@@ -16,11 +18,8 @@ function ReviewDetail({ type }) {
       .then(setItem)
       .catch(() => {
         // 后端不可用时回退到静态数据
-        const dataFile = isMovie ? '../data/movies' : '../data/books';
-        import(dataFile).then((m) => {
-          const found = m.default.find((i) => i.id === id);
-          setItem(found || null);
-        });
+        const found = (isMovie ? staticMovies : staticBooks).find((i) => i.id === id);
+        setItem(found || null);
       })
       .finally(() => setLoading(false));
   }, [id, isMovie]);

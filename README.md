@@ -73,38 +73,130 @@ npm run setup <用户名> <新密码>
 
 ## 🌐 服务器部署
 
+### 环境要求
+
+- Ubuntu 20.04+ / Debian 11+
+- Node.js 18+（推荐 20 LTS）
+- Nginx（可选，用于 80/443 端口反代）
+
+### 首次部署
+
 ```bash
 # 1. 克隆项目
-git clone https://github.com/monaksia/sia-plog.git
+git clone git@github.com:monaksia/sia-plog.git
 cd sia-plog
 
-# 2. 安装依赖 + 构建
+# 2. 安装依赖
 npm install
+
+# 3. 构建前端静态文件
 npm run build
 
-# 3. 创建管理员
+# 4. 创建管理员账户
 npm run setup admin 你的密码
 
-# 4. 使用 PM2 守护进程
-npm install -g pm2
-pm2 start server/index.js --name sia-plog
-pm2 save && pm2 startup
-
-# 5. 配置 Nginx（参考 nginx.conf.example）
+# 5. 启动服务（直接运行，测试用）
+npm start
+# 访问 http://你的IP:3001 即可看到博客
 ```
 
-### Nginx 配置要点
+### PM2 守护进程（推荐）
+
+PM2 可以在服务崩溃后自动重启，并支持开机自启。
+
+```bash
+# 全局安装 PM2
+npm install -g pm2
+
+# 启动应用
+pm2 start server/index.js --name sia-plog
+
+# 查看状态
+pm2 status
+
+# 查看日志
+pm2 logs sia-plog
+
+# 设置开机自启
+pm2 save
+pm2 startup          # 按照输出的提示执行对应命令
+```
+
+### Nginx 反向代理
+
+将 Node 服务代理到 80（HTTP）/ 443（HTTPS）端口。
+
+```bash
+# 创建站点配置
+sudo nano /etc/nginx/sites-available/sia-plog
+```
+
+参考以下配置（或直接复制项目中的 `nginx.conf.example`）：
 
 ```nginx
-# API 转发
-location /api/ { proxy_pass http://127.0.0.1:3001; }
+server {
+    listen 80;
+    server_name your-domain.com;  # 替换为你的域名或 IP
 
-# 上传图片
-location /uploads/ { alias /path/to/sia-plog/server/uploads/; }
+    # API 转发给 Node.js
+    location /api/ {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
 
-# 静态文件 + SPA 路由回退
-location / { root /path/to/sia-plog/dist; try_files $uri /index.html; }
+    # 上传的图片
+    location /uploads/ {
+        alias /home/your-user/sia-plog/server/uploads/;
+    }
+
+    # 静态文件 + SPA 回退
+    location / {
+        root /home/your-user/sia-plog/dist;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+    }
+}
 ```
+
+```bash
+# 启用站点
+sudo ln -s /etc/nginx/sites-available/sia-plog /etc/nginx/sites-enabled/
+sudo nginx -t           # 检查配置语法
+sudo systemctl reload nginx
+
+# HTTPS（可选，使用 Let's Encrypt 免费证书）
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d your-domain.com
+```
+
+### 后续更新
+
+本地 push 代码后，在服务器上执行：
+
+```bash
+cd sia-plog
+git pull                 # 拉取最新代码
+npm install              # 依赖没变化可跳过
+npm run build            # 重新构建前端
+pm2 restart sia-plog     # 重启服务
+```
+
+### 常见问题
+
+**端口被占用**
+```bash
+lsof -i :3001            # 查看占用进程
+kill -9 <PID>            # 结束进程
+```
+
+**PM2 启动失败**
+```bash
+pm2 logs sia-plog --lines 50   # 查看最近 50 行日志排查
+```
+
+**上传图片 404**
+检查 `server/uploads/` 目录是否存在且有写入权限。Nginx 用户确保 `uploads` 路径指向正确。
 
 ---
 
