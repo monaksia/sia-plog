@@ -30,4 +30,27 @@ router.get('/local', (_req, res) => {
   res.json({ files });
 });
 
+// 调试端点：排查生产环境音乐播放问题
+router.get('/debug', (_req, res) => {
+  const publicDir = path.join(__dirname, '..', '..', 'public', 'audio');
+  const distDir = path.join(__dirname, '..', '..', 'dist', 'audio');
+
+  const info = {
+    nodeEnv: process.env.NODE_ENV || '(not set)',
+    cwd: process.cwd(),
+    publicAudio: {
+      path: publicDir,
+      exists: existsSync(publicDir),
+      files: existsSync(publicDir) ? readdirSync(publicDir) : [],
+    },
+    distAudio: {
+      path: distDir,
+      exists: existsSync(distDir),
+      files: existsSync(distDir) ? readdirSync(distDir) : [],
+    },
+  };
+
+  res.json(info);
+});
+
 export default router;

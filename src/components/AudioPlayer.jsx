@@ -14,6 +14,7 @@ function AudioPlayer() {
   const [currentIdx, setCurrentIdx] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isEnded, setIsEnded] = useState(false);
+  const [error, setError] = useState(null);
   const [progress, setProgress] = useState(0);
 
   const audioRef = useRef(null);
@@ -42,9 +43,12 @@ function AudioPlayer() {
     setProgress(100);
   }, []);
 
-  const handleError = useCallback(() => {
+  const handleError = useCallback((e) => {
+    const a = audioRef.current;
+    const src = a?.src || '';
     setIsPlaying(false);
-    console.error('Audio playback error');
+    setError(`无法加载: ${src ? decodeURIComponent(src.split('/').pop()) : '未知文件'}`);
+    console.error('Audio playback error:', src, e);
   }, []);
 
   const handlePlaying = useCallback(() => {
@@ -95,6 +99,7 @@ function AudioPlayer() {
     setCurrentIdx(idx);
     setIsPlaying(false);
     setIsEnded(false);
+    setError(null);
     setProgress(0);
   }, []);
 
@@ -167,6 +172,8 @@ function AudioPlayer() {
             </div>
             <span className="music-time">{formatTime(audioRef.current?.currentTime || 0)}</span>
           </div>
+
+          {error && <p className="music-error">{error}</p>}
         </div>
       )}
 
