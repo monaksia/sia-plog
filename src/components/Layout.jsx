@@ -8,6 +8,12 @@ function Layout() {
       <main className="page-content">
         <Outlet />
       </main>
+      <img
+        src="/img/bg-character.webp"
+        alt=""
+        aria-hidden="true"
+        className="bg-character"
+      />
     </>
   );
 }

@@ -656,6 +656,45 @@ img {
 }
 
 /* ===========================
+   Background Character — 抠图角色底图
+   =========================== */
+
+.bg-character {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: min(38vw, 440px);
+  height: auto;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.08;
+  user-select: none;
+  filter: grayscale(25%);
+  animation: bg-char-in 4s ease-out;
+}
+
+@keyframes bg-char-in {
+  0%   { opacity: 0; transform: translateY(24px); }
+  100% { opacity: 0.08; transform: translateY(0); }
+}
+
+@media (min-width: 1400px) {
+  .bg-character {
+    width: min(32vw, 500px);
+    opacity: 0.09;
+  }
+}
+
+@media (max-width: 768px) {
+  .bg-character {
+    width: 50vw;
+    opacity: 0.04;
+    right: -6vw;
+    bottom: -3vh;
+  }
+}
+
+/* ===========================
    Responsive
    =========================== */
 
