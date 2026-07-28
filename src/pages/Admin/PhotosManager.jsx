@@ -80,7 +80,7 @@ function PhotosManager() {
       <div className="admin-photo-grid">
         {photos.map((p) => (
           <div key={p.id} className="admin-photo-item">
-            <img src={p.src} alt={p.alt} />
+            <img src={p.thumb || p.src} alt={p.alt} loading="lazy" />
             {/* Metadata preview */}
             {(p.location || p.date_taken) && (
               <div className="photo-meta-preview">

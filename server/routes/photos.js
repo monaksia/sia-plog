@@ -3,18 +3,22 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import sharp from 'sharp';
 import db from '../db.js';
 import { requireAuth } from '../auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOADS = path.join(__dirname, '..', 'uploads');
+const THUMBS = path.join(UPLOADS, 'thumbs');
 
 // 确保上传目录存在
-if (!fs.existsSync(UPLOADS)) {
-  fs.mkdirSync(UPLOADS, { recursive: true });
-  console.log('[Photos] 创建上传目录:', UPLOADS);
+for (const dir of [UPLOADS, THUMBS]) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log('[Photos] 创建目录:', dir);
+  }
 }
-console.log('[Photos] 上传目录:', UPLOADS, '| 存在:', fs.existsSync(UPLOADS));
+console.log('[Photos] 上传目录:', UPLOADS);
 
 const storage = multer.diskStorage({
   destination: UPLOADS,
@@ -33,31 +37,63 @@ router.get('/', (_req, res) => {
   res.json(photos);
 });
 
-// 管理员：上传照片
-router.post('/', requireAuth, (req, res, next) => {
-  console.log('[Photos] 收到上传请求, Content-Type:', req.get('Content-Type'));
-  next();
-}, upload.single('image'), (req, res) => {
-  console.log('[Photos] req.file:', req.file ? JSON.stringify({ filename: req.file.filename, path: req.file.path, size: req.file.size }) : 'NULL');
-  console.log('[Photos] req.body keys:', Object.keys(req.body));
-
+// 管理员：上传照片（自动压缩 + 生成缩略图）
+router.post('/', requireAuth, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请选择图片' });
 
-  // 确认文件确实写入了磁盘
-  const exists = fs.existsSync(req.file.path);
-  console.log('[Photos] 文件存在于磁盘:', exists, req.file.path);
-  if (!exists) return res.status(500).json({ error: '文件写入失败，磁盘上未找到' });
+  const originalPath = req.file.path;
+  const originalSize = req.file.size;
+  const basename = path.basename(req.file.filename, path.extname(req.file.filename));
+  const webpName = basename + '.webp';
+  const thumbName = basename + '_thumb.webp';
 
-  const { alt, camera, location, date_taken, notes, width, height } = req.body;
-  const src = '/uploads/' + req.file.filename;
-  const result = db.prepare(
-    'INSERT INTO photos (src, alt, camera, location, date_taken, notes, width, height) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(src, alt || '', camera || '', location || '', date_taken || '', notes || '', parseInt(width) || 1200, parseInt(height) || 800);
+  console.log(`[Photos] 原图: ${(originalSize / 1024 / 1024).toFixed(1)}MB, 处理中...`);
 
-  console.log('[Photos] DB 插入成功, id:', result.lastInsertRowid);
+  try {
+    // 主图：2000px 宽 WebP
+    const mainPath = path.join(UPLOADS, webpName);
+    const mainInfo = await sharp(originalPath)
+      .resize(2000, null, { withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toFile(mainPath);
+    console.log(`[Photos] 主图 WebP: ${(mainInfo.size / 1024).toFixed(1)}KB`);
 
-  const photo = db.prepare('SELECT * FROM photos WHERE id = ?').get(result.lastInsertRowid);
-  res.status(201).json(photo);
+    // 缩略图：400px 宽 WebP
+    const thumbPath = path.join(THUMBS, thumbName);
+    const thumbInfo = await sharp(originalPath)
+      .resize(400, null, { withoutEnlargement: true })
+      .webp({ quality: 70 })
+      .toFile(thumbPath);
+    console.log(`[Photos] 缩略图: ${(thumbInfo.size / 1024).toFixed(1)}KB`);
+
+    // 取实际尺寸
+    const meta = await sharp(mainPath).metadata();
+
+    // 删原图
+    fs.unlinkSync(originalPath);
+
+    const src = '/uploads/' + webpName;
+    const thumb = '/uploads/thumbs/' + thumbName;
+    const { alt, camera, location, date_taken, notes } = req.body;
+
+    const result = db.prepare(
+      'INSERT INTO photos (src, alt, camera, location, date_taken, notes, width, height) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(src, alt || '', camera || '', location || '', date_taken || '', notes || '', meta.width || 2000, meta.height || 1500);
+
+    // 同时存 thumb 路径（利用 notes 字段的 JSON 或者直接拼接）
+    // 这里把 thumb 信息放在返回结果里，前端按约定拼接
+    console.log(`[Photos] DB 插入成功, id: ${result.lastInsertRowid}, 压缩比: ${((1 - mainInfo.size / originalSize) * 100).toFixed(0)}%`);
+
+    const photo = db.prepare('SELECT * FROM photos WHERE id = ?').get(result.lastInsertRowid);
+    // 附加 thumb URL
+    photo.thumb = thumb;
+    res.status(201).json(photo);
+  } catch (err) {
+    console.error('[Photos] 图片处理失败:', err);
+    // 清理原图
+    if (fs.existsSync(originalPath)) fs.unlinkSync(originalPath);
+    res.status(500).json({ error: '图片处理失败: ' + err.message });
+  }
 });
 
 // 管理员：更新照片信息
@@ -73,9 +109,14 @@ router.delete('/:id', requireAuth, (req, res) => {
   const photo = db.prepare('SELECT * FROM photos WHERE id = ?').get(req.params.id);
   if (!photo) return res.status(404).json({ error: '未找到' });
 
-  // 删除文件
+  // 删除主图
   const filePath = path.join(__dirname, '..', photo.src);
   if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+  // 删除缩略图
+  const thumbName = path.basename(photo.src, '.webp') + '_thumb.webp';
+  const thumbPath = path.join(THUMBS, thumbName);
+  if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
 
   db.prepare('DELETE FROM photos WHERE id = ?').run(req.params.id);
   res.json({ ok: true });

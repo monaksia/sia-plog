@@ -8,9 +8,11 @@ server {
     # 上传文件大小限制（默认 1M，照片需要更大）
     client_max_body_size 20m;
 
-    # 上传的图片
+    # 上传的图片（含缩略图）
     location /uploads/ {
         alias /home/your-user/sia-plog/server/uploads/;
+        expires 7d;
+        add_header Cache-Control "public, immutable";
     }
 
     # 本地音乐文件（直接从源目录读取，不需要重新 build）
