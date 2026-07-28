@@ -24,6 +24,9 @@ app.use('/api/music', musicRoutes);
 // 上传文件静态访问
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// 本地音乐文件静态访问（始终从 public/audio/ 读取）
+app.use('/audio', express.static(path.join(__dirname, '..', 'public', 'audio')));
+
 // 生产环境：提供前端静态文件
 const distDir = path.join(__dirname, '..', 'dist');
 app.use(express.static(distDir));

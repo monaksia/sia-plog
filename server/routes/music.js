@@ -6,13 +6,9 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const router = Router();
 
-// 本地音乐目录（dev 下在 public/audio/，prod 下在 dist/audio/）
+// 本地音乐目录（始终从 public/audio/ 读取，dev 和 prod 统一）
 function getAudioDir() {
-  const isDev = process.env.NODE_ENV !== 'production';
-  const base = isDev
-    ? path.join(__dirname, '..', '..', 'public', 'audio')
-    : path.join(__dirname, '..', '..', 'dist', 'audio');
-  return base;
+  return path.join(__dirname, '..', '..', 'public', 'audio');
 }
 
 // 列出本地音乐文件
