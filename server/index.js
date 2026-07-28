@@ -36,6 +36,17 @@ app.get('/{*path}', (_req, res) => {
   res.sendFile(path.join(distDir, 'index.html'));
 });
 
+// 全局错误处理 — API 错误返回 JSON 而非 HTML
+app.use((err, _req, res, _next) => {
+  console.error('[Server Error]', err);
+  if (_req.path.startsWith('/api/')) {
+    const status = err.status || err.statusCode || 500;
+    res.status(status).json({ error: err.message || '服务器内部错误' });
+  } else {
+    res.status(500).sendFile(path.join(distDir, 'index.html'));
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`[Server] http://localhost:${PORT}`);
   console.log(`[Server] 图片存储: ${path.join(__dirname, 'uploads')}`);

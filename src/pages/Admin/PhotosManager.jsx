@@ -15,16 +15,24 @@ function PhotosManager() {
   useEffect(() => { fetch(); }, []);
 
   // Upload with optional metadata
+  const [uploadError, setUploadError] = useState(null);
+
   const handleUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setUploading(true);
-    const fd = new FormData();
-    fd.append('image', file);
-    fd.append('alt', file.name.replace(/\.[^.]+$/, ''));
-    await uploadPhoto(fd);
-    setUploading(false);
-    fetch();
+    setUploadError(null);
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+      fd.append('alt', file.name.replace(/\.[^.]+$/, ''));
+      await uploadPhoto(fd);
+      fetch();
+    } catch (err) {
+      setUploadError(err.message);
+    } finally {
+      setUploading(false);
+    }
   };
 
   // Open edit panel
@@ -66,6 +74,7 @@ function PhotosManager() {
           {uploading ? '上传中...' : '+ 上传照片'}
           <input type="file" accept="image/*" onChange={handleUpload} hidden />
         </label>
+        {uploadError && <span className="admin-upload-error">{uploadError}</span>}
       </div>
 
       <div className="admin-photo-grid">
