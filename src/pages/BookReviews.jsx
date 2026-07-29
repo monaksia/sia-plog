@@ -17,17 +17,21 @@ function BookReviews() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="container"><p>Loading...</p></div>;
+  if (loading) return <div className="container"><p>Loading&hellip;</p></div>;
 
   return (
     <div className="container">
       <h1>Books</h1>
-      <p className="home-subtitle">阅读 · 思考 · 笔记</p>
+      <p className="home-subtitle">Reading, thinking, notes</p>
       <hr />
 
-      <div className="review-grid">
+      <div className="review-grid reveal-stagger">
         {books.map((book) => (
-          <Link to={`/books/${book.slug || book.id}`} key={book.slug || book.id} className="review-card">
+          <Link
+            to={`/books/${book.slug || book.id}`}
+            key={book.slug || book.id}
+            className="review-card reveal reveal-up"
+          >
             <div className="review-card-poster book-cover">
               <img src={book.cover || '/covers/book-placeholder.svg'} alt={book.title} loading="lazy" />
             </div>
@@ -35,7 +39,7 @@ function BookReviews() {
               <h3 className="review-card-title">{book.title}</h3>
               <div className="review-card-meta">
                 <span>{book.author}</span>
-                <span className="meta-divider">|</span>
+                <span className="meta-divider">&middot;</span>
                 <span>{book.year}</span>
               </div>
               <StarRating value={book.rating} size="sm" />

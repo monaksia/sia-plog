@@ -1,54 +1,60 @@
 /* ========================================
-   Variables — Frost Monitor 冷调像素主题
+   Variables — Magazine Editorial Design System
+   Swiss Modernism 2.0 + Editorial Grid
    ======================================== */
 
 :root {
-  /* === 配色 — Frost Monitor === */
-  --color-bg:        #0b1018;   /* 深蓝黑底色 */
-  --color-surface:   #141b25;   /* 卡片/区块表面 */
-  --color-surface2:  #1a2330;   /* 次级表面（input/code 背景） */
-  --color-border:    #1e2c3a;   /* 薄冷色分割线 */
-  --color-border-bright: #2a3d52; /* 悬停/亮态边框 */
+  /* === Colors — Editorial Dark === */
+  --color-bg:            #08080A;   /* near-black paper */
+  --color-surface:       #0F0F11;   /* lifted black — card/block surface */
+  --color-surface2:      #161618;   /* secondary surface — inputs/code */
+  --color-border:        #232326;   /* warm dark divider */
+  --color-border-bright: #3A3A40;   /* hover / bright border */
 
-  --color-primary:   #5b9bd5;   /* 冷蓝 — 链接/按钮 */
-  --color-accent:    #a78bfa;   /* 淡紫 — 评分/高亮 */
-  --color-text:      #e2e8f0;   /* 冷调白正文 */
-  --color-text-dim:  #7389a5;   /* 钢蓝灰次要文字 */
-  --color-danger:    #e0556a;   /* 错误/删除 */
+  --color-primary:       #EC4899;   /* magazine pink — links/buttons/accents */
+  --color-accent:        #F472B6;   /* lighter pink — ratings/highlights */
+  --color-on-primary:    #08080A;   /* text on primary bg */
+  --color-text:          #F4F4F5;   /* warm off-white body text */
+  --color-text-dim:      #A1A1AA;   /* warm gray secondary text */
+  --color-danger:        #EF4444;   /* error/delete */
 
-  /* === 边框 — 极简细线 === */
-  --border-thin: 1px solid var(--color-border);
+  /* === Borders === */
+  --border-thin:  1px solid var(--color-border);
   --border-focus: 1px solid var(--color-primary);
-  --border-glow: 0 0 0 1px var(--color-border), 0 0 12px rgba(91, 155, 213, 0.12);
 
-  /* === 字体 === */
-  --font-display: 'VT323', 'Courier New', monospace;
-  --font-body:    'Inter', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-mono:    'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  /* === Typography — Editorial Stack === */
+  --font-display:  'Libre Bodoni', 'Georgia', 'Times New Roman', serif;
+  --font-body:     'Public Sans', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono:     'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  --font-italic:   'Libre Bodoni', 'Georgia', serif;  /* italic variant for pull quotes */
 
-  /* === 字号（内容导向，偏大行宽）=== */
-  --text-xs:   0.75rem;    /* 辅助标签 */
-  --text-sm:   0.875rem;   /* 元数据 */
-  --text-base: 1rem;       /* 正文 */
-  --text-lg:   1.25rem;    /* 摘要/引言 */
-  --text-xl:   1.75rem;    /* 页面标题 */
-  --text-2xl:  2.5rem;     /* Hero 大标题 */
+  /* === Type Scale === */
+  --text-xs:    0.75rem;    /* 12px — captions, meta */
+  --text-sm:    0.875rem;   /* 14px — secondary text */
+  --text-base:  1.0625rem;  /* 17px — body (slightly larger for reading) */
+  --text-lg:    1.25rem;    /* 20px — subheadings */
+  --text-xl:    1.75rem;    /* 28px — section titles */
+  --text-2xl:   2.5rem;     /* 40px — page titles */
+  --text-3xl:   3.5rem;     /* 56px — hero headlines */
+  --text-4xl:   5rem;       /* 80px — cover headlines */
 
-  /* === 间距（8px 栅格）=== */
-  --space-xs:  0.25rem;
-  --space-sm:  0.5rem;
-  --space-md:  1rem;
-  --space-lg:  1.5rem;
-  --space-xl:  2rem;
-  --space-2xl: 3rem;
-  --space-3xl: 4rem;
+  /* === Spacing (8px grid, extended for editorial) === */
+  --space-xs:   0.25rem;
+  --space-sm:   0.5rem;
+  --space-md:   1rem;
+  --space-lg:   1.5rem;
+  --space-xl:   2rem;
+  --space-2xl:  3rem;
+  --space-3xl:  4rem;
+  --space-4xl:  6rem;
 
-  /* === 阅读宽度 === */
-  --content-width: 680px;
-  --content-wide: 960px;
+  /* === Layout Widths === */
+  --content-width:  720px;   /* main column */
+  --content-wide:   1080px;  /* photography spreads */
 
-  /* === 其他 === */
-  --radius: 0px;       /* 像素风格保持无圆角 */
-  --transition-fast: 120ms ease;
-  --transition-base: 200ms ease;
+  /* === Misc === */
+  --radius:          2px;    /* subtle print-like rounding */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms ease;
 }

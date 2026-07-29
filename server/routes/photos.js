@@ -34,7 +34,18 @@ const router = Router();
 // 公开：获取照片列表
 router.get('/', (_req, res) => {
   const photos = db.prepare('SELECT * FROM photos ORDER BY sort_order DESC, created_at DESC').all();
-  res.json(photos);
+  // Append thumb path for each photo
+  const result = photos.map((p) => {
+    const ext = path.extname(p.src);
+    const base = path.basename(p.src, ext);
+    const thumbPath = `/uploads/thumbs/${base}_thumb.webp`;
+    const fullThumbPath = path.join(__dirname, '..', thumbPath);
+    return {
+      ...p,
+      thumb: fs.existsSync(fullThumbPath) ? thumbPath : null,
+    };
+  });
+  res.json(result);
 });
 
 // 管理员：上传照片（自动压缩 + 生成缩略图）

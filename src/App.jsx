@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import AdminGuard from './components/AdminGuard';
-import ParticleBackground from './components/ParticleBackground';
 import Home from './pages/Home';
 import Photography from './pages/Photography';
 import MovieReviews from './pages/MovieReviews';
@@ -18,8 +17,6 @@ import ReviewEditPage from './pages/Admin/ReviewEditPage';
 function App() {
   return (
     <BrowserRouter>
-      <ParticleBackground count={10} minSize={3} maxSize={5} />
-
       <Routes>
         {/* 前台 */}
         <Route element={<Layout />}>

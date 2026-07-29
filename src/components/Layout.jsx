@@ -1,12 +1,15 @@
 import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
+import PageTransition from './PageTransition';
 
 function Layout() {
   return (
     <>
       <Navbar />
       <main className="page-content">
-        <Outlet />
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </main>
       <img
         src="/img/bg-character.webp"

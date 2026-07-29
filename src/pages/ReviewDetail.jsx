@@ -17,35 +17,45 @@ function ReviewDetail({ type }) {
     fetcher(id)
       .then(setItem)
       .catch(() => {
-        // 后端不可用时回退到静态数据
         const found = (isMovie ? staticMovies : staticBooks).find((i) => i.id === id);
         setItem(found || null);
       })
       .finally(() => setLoading(false));
   }, [id, isMovie]);
 
-  if (loading) return <div className="container"><p>Loading...</p></div>;
+  if (loading) return <div className="container"><p>Loading&hellip;</p></div>;
 
   if (!item) {
     return (
       <div className="container">
         <h1>Not Found</h1>
         <p>Review not found.</p>
-        <Link to={`/${isMovie ? 'movies' : 'books'}`} className="review-detail-back">← Back to {isMovie ? 'movies' : 'books'}</Link>
+        <Link to={`/${isMovie ? 'movies' : 'books'}`} className="review-detail-back">
+          &larr; {isMovie ? 'Movies' : 'Books'}
+        </Link>
       </div>
     );
   }
 
+  const genreText = Array.isArray(item.genre) ? item.genre.join(' · ') : item.genre;
+  const tags = Array.isArray(item.tags) ? item.tags : [];
+
   return (
     <div className="container">
+      {/* Editorial breadcrumb */}
       <Link to={`/${isMovie ? 'movies' : 'books'}`} className="review-detail-back">
-        ← Back to {isMovie ? 'movies' : 'books'}
+        &larr; {isMovie ? 'Movies' : 'Books'}
       </Link>
 
+      {/* Magazine article header */}
       <div className="review-detail-header">
         <div className={`review-detail-poster${isMovie ? '' : ' book-cover'}`}>
           <img
-            src={isMovie ? (item.poster || '/covers/movie-placeholder.svg') : (item.cover || '/covers/book-placeholder.svg')}
+            src={
+              isMovie
+                ? (item.poster || '/covers/movie-placeholder.svg')
+                : (item.cover || '/covers/book-placeholder.svg')
+            }
             alt={item.title}
             loading="lazy"
           />
@@ -53,32 +63,36 @@ function ReviewDetail({ type }) {
 
         <div className="review-detail-meta">
           <h1>{item.title}</h1>
-          {item.titleEn && (
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-dim)' }}>{item.titleEn}</p>
+          {(item.titleEn || item.title_en) && (
+            <p className="review-detail-title-en">{item.titleEn || item.title_en}</p>
           )}
+
           <StarRating value={item.rating} size="md" />
 
+          {/* Editorial byline */}
           <div className="review-detail-info">
             {isMovie ? (
               <>
-                {item.director && <p><strong>导演</strong> {item.director}</p>}
-                {item.year && <p><strong>年份</strong> {item.year}</p>}
-                {item.genre?.length > 0 && <p><strong>类型</strong> {Array.isArray(item.genre) ? item.genre.join(' / ') : item.genre}</p>}
-                {item.cast?.length > 0 && <p><strong>主演</strong> {Array.isArray(item.cast) ? item.cast.join('、') : item.cast}</p>}
+                {item.director && <p><strong>Director</strong> {item.director}</p>}
+                {item.year && <p><strong>Year</strong> {item.year}</p>}
+                {genreText && <p><strong>Genre</strong> {genreText}</p>}
+                {item.cast?.length > 0 && (
+                  <p><strong>Cast</strong> {Array.isArray(item.cast) ? item.cast.join(' · ') : item.cast}</p>
+                )}
               </>
             ) : (
               <>
-                {item.author && <p><strong>作者</strong> {item.author}</p>}
-                {item.year && <p><strong>出版年</strong> {item.year}</p>}
-                {item.publisher && <p><strong>出版社</strong> {item.publisher}</p>}
-                {item.genre?.length > 0 && <p><strong>类型</strong> {Array.isArray(item.genre) ? item.genre.join(' / ') : item.genre}</p>}
+                {item.author && <p><strong>Author</strong> {item.author}</p>}
+                {item.year && <p><strong>Year</strong> {item.year}</p>}
+                {item.publisher && <p><strong>Publisher</strong> {item.publisher}</p>}
+                {genreText && <p><strong>Genre</strong> {genreText}</p>}
               </>
             )}
           </div>
 
-          {item.tags?.length > 0 && (
+          {tags.length > 0 && (
             <div className="review-tags">
-              {(Array.isArray(item.tags) ? item.tags : []).map((tag) => (
+              {tags.map((tag) => (
                 <span key={tag} className="review-tag">{tag}</span>
               ))}
             </div>
@@ -87,6 +101,8 @@ function ReviewDetail({ type }) {
       </div>
 
       <hr />
+
+      {/* Magazine article body */}
       <div className="review-detail-body">
         <ReactMarkdown>{item.review || ''}</ReactMarkdown>
       </div>

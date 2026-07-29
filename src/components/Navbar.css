@@ -1,12 +1,25 @@
-/* === 导航栏 — Frost Monitor === */
+/* === Navigation — Magazine Editorial === */
+
 .navbar {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(11, 16, 24, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(8, 8, 10, 0.90);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--color-border);
+}
+
+/* Scroll progress bar */
+.navbar-progress {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  transition: width 0.1s linear;
+  z-index: 1;
+  border-radius: 0;
 }
 
 .navbar-links {
@@ -16,7 +29,7 @@
   max-width: var(--content-width);
   margin: 0 auto;
   padding: 0 var(--space-md);
-  height: 48px;
+  height: 56px;
   align-items: center;
 }
 
@@ -26,13 +39,15 @@
 
 .navbar-links a {
   display: block;
-  font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: var(--color-text-dim);
   border: none;
   box-shadow: none;
   background: transparent;
-  letter-spacing: 0.04em;
   padding: var(--space-xs) 0;
   position: relative;
   transition: color var(--transition-fast);
@@ -41,12 +56,12 @@
 .navbar-links a::after {
   content: '';
   position: absolute;
-  bottom: -2px;
+  bottom: -4px;
   left: 0;
   width: 0;
-  height: 1px;
+  height: 2px;
   background: var(--color-primary);
-  transition: width var(--transition-fast);
+  transition: width var(--transition-base);
 }
 
 .navbar-links a:hover {
@@ -70,11 +85,11 @@
   background: var(--color-primary);
 }
 
-/* 移动端汉堡菜单 */
+/* Mobile hamburger */
 .navbar-toggle {
   display: none;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   padding: var(--space-md);
   background: none;
   border: none;
@@ -83,23 +98,40 @@
   right: var(--space-sm);
   top: 50%;
   transform: translateY(-50%);
+  z-index: 110;
 }
 
 .navbar-toggle span {
   display: block;
-  width: 20px;
+  width: 22px;
   height: 2px;
   background: var(--color-text-dim);
-  transition: background var(--transition-fast);
+  transition: all var(--transition-base);
+  transform-origin: center;
 }
 
 .navbar-toggle:hover span {
   background: var(--color-text);
 }
 
+/* Hamburger open state — turns into X */
+.navbar-toggle.open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.navbar-toggle.open span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.navbar-toggle.open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
 @media (max-width: 640px) {
   .navbar {
     position: relative;
+    height: 56px;
   }
 
   .navbar-toggle {
@@ -108,11 +140,16 @@
 
   .navbar-links {
     display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 105;
     flex-direction: column;
     align-items: center;
-    height: auto;
-    padding: var(--space-md);
-    gap: var(--space-xs);
+    justify-content: center;
+    height: 100vh;
+    padding: var(--space-xl);
+    gap: var(--space-lg);
+    background: var(--color-bg);
   }
 
   .navbar-links.open {
@@ -120,7 +157,12 @@
   }
 
   .navbar-links a {
-    font-size: 1.1rem;
-    padding: var(--space-sm) 0;
+    font-size: 1.2rem;
+    letter-spacing: 0.1em;
+  }
+
+  .navbar-progress {
+    bottom: auto;
+    top: 0;
   }
 }
