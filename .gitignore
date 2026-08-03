@@ -12,3 +12,8 @@ server/uploads/*.png
 server/uploads/*.webp
 server/uploads/*.svg
 !server/uploads/.gitkeep
+
+# Claude/Agent skills（本地安装，不属于项目代码）
+.agents/skills/
+.claude/skills/
+skills-lock.json
