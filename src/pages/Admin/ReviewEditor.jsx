@@ -13,7 +13,7 @@ function ReviewEditor({ type, initial, onSave, onDelete }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (initial) setForm({ ...getEmpty(isMovie), ...initial });
+    setForm({ ...getEmpty(isMovie), ...(initial || {}) });
   }, [initial, isMovie]);
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
@@ -47,7 +47,7 @@ function ReviewEditor({ type, initial, onSave, onDelete }) {
         ))}
         <label className="admin-editor-wide">
           <span>slug（URL 标识）</span>
-          <input value={form.slug || ''} onChange={set('slug')} />
+          <input value={form.slug || ''} onChange={set('slug')} readOnly={Boolean(initial)} />
         </label>
         <label className="admin-editor-wide">
           <span>tags（逗号分隔）</span>

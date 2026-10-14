@@ -1,29 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import StarRating from '../components/StarRating';
 import { getMovie, getBook } from '../api';
-import staticMovies from '../data/movies';
-import staticBooks from '../data/books';
+import useResource from '../hooks/useResource';
+import LoadError from '../components/LoadError';
 
 function ReviewDetail({ type }) {
   const { id } = useParams();
   const isMovie = type === 'movie';
-  const [item, setItem] = useState(null);
-  const [loading, setLoading] = useState(true);
-
+  const load = useCallback(options => (isMovie ? getMovie : getBook)(id, options), [id, isMovie]);
+  const { data: item, loading, error, retry } = useResource(load);
   useEffect(() => {
-    const fetcher = isMovie ? getMovie : getBook;
-    fetcher(id)
-      .then(setItem)
-      .catch(() => {
-        const found = (isMovie ? staticMovies : staticBooks).find((i) => i.id === id);
-        setItem(found || null);
-      })
-      .finally(() => setLoading(false));
-  }, [id, isMovie]);
+    const original = document.title;
+    if (item) {
+      document.title = `${item.title} — Sia Plog`;
+      const description = document.querySelector('meta[name="description"]');
+      const previous = description?.content;
+      if (description) description.content = item.excerpt || item.title;
+      return () => { document.title = original; if (description) description.content = previous; };
+    }
+  }, [item]);
 
   if (loading) return <div className="container"><p>Loading&hellip;</p></div>;
+
+  if (error && error.status !== 404) return <div className="container"><LoadError error={error} retry={retry} /></div>;
 
   if (!item) {
     return (

@@ -1,0 +1,17 @@
+[Unit]
+Description=Verified Sia Plog database and media backup
+After=siaplog.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/www/sia-plog
+Environment=SIA_DATA_DIR=/var/lib/siaplog
+Environment=SIA_AUDIO_DIR=/var/lib/siaplog/audio
+Environment=SIA_BACKUP_DIR=/var/backups/siaplog
+ExecStart=/var/www/sia-plog/.runtime/node /var/www/sia-plog/scripts/backup.mjs
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/backups/siaplog
+PrivateTmp=yes

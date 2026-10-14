@@ -4,7 +4,6 @@ import App from './App';
 import './styles/reset.css';
 import './styles/variables.css';
 import './styles/main.css';
-import './pages/Admin/Admin.css';
 
 // Global scroll-reveal observer — automatically adds .visible to .reveal elements
 function initGlobalReveal() {

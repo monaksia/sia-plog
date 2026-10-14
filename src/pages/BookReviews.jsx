@@ -1,23 +1,16 @@
-import { useState, useEffect } from 'react';
+import useResource from '../hooks/useResource';
+import LoadError from '../components/LoadError';
 import { Link } from 'react-router-dom';
 import StarRating from '../components/StarRating';
 import { getBooks } from '../api';
 import './Reviews.css';
 
 function BookReviews() {
-  const [books, setBooks] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getBooks()
-      .then(setBooks)
-      .catch(() => {
-        import('../data/books').then((b) => setBooks(b.default));
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  const { data, loading, error, retry } = useResource(getBooks);
+  const books = data || [];
 
   if (loading) return <div className="container"><p>Loading&hellip;</p></div>;
+  if (error) return <div className="container"><LoadError error={error} retry={retry} /></div>;
 
   return (
     <div className="container">

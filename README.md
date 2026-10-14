@@ -1,3 +1,5 @@
+> 当前生产运维、备份和部署配置以 [OPERATIONS.md](OPERATIONS.md) 为准。
+
 # Sia Plog — Personal Archive
 
 > 基于 Vite + React 的个人博客，杂志编辑风格（Magazine Editorial）。
@@ -24,14 +26,17 @@
 
 ### 环境要求
 
-- Node.js 18+（推荐 20 LTS）
+- Node.js 24.x（当前验证版本 24.18.0，参见 `.nvmrc`）
 - npm 9+
 
 ### 启动
 
 ```bash
 # 安装依赖
-npm install
+npm ci
+
+# 配置开发用的强随机 JWT_SECRET（必需）；生产使用 /etc/siaplog/app.env
+export JWT_SECRET="$(node -e "process.stdout.write(require('crypto').randomBytes(48).toString('base64url'))")"
 
 # 同时启动前端 (port 3000) + 后端 (port 3001)
 npm run dev
@@ -92,7 +97,7 @@ npm start        # 启动生产服务器（Express 托管 dist/ + API）
 
 ## 本地音乐播放器
 
-将音乐文件放入 `public/audio/` 目录即可在首页播放。支持的格式：
+开发时将音乐文件放入 `public/audio/`，生产使用 `/var/lib/siaplog/audio`（可用 `SIA_AUDIO_DIR` 覆盖）。音频不随前端构建或 Git 发布。支持的格式：
 
 | 格式 | 扩展名 |
 |------|--------|
@@ -122,20 +127,17 @@ npm start        # 启动生产服务器（Express 托管 dist/ + API）
 | 输出 | 规格 | 用途 |
 |------|------|------|
 | 主图 WebP | 2000px 宽, quality 80 | 画廊 + 灯箱 |
-| 缩略图 WebP | 400px 宽, quality 70 | 管理后台网格 |
+| 中图 WebP | 1000px 宽, quality 78 | 响应式画廊 |
+| 缩略图 WebP | 400px 宽, quality 70 | 管理后台及小屏预览 |
 
 原图在上传处理完成后自动删除，不占用磁盘。前端摄影画廊自动使用缩略图加载网格预览，点击进入灯箱时切换为主图。
 
-### 历史图片批量转换
+### 现有照片补齐变体
+
+脚本保留既有主图 URL，为照片补齐缩略图和中图。运行前先备份；生产执行时指定持久化数据目录：
 
 ```bash
-# 将 server/uploads/ 中的旧 JPG/PNG 转为 WebP 并生成缩略图
-node -e "
-const sharp = require('sharp');
-const path = require('path');
-const fs = require('fs');
-// ... 遍历、转换、更新 DB
-"
+SIA_DATA_DIR=/var/lib/siaplog /var/www/sia-plog/.runtime/node scripts/upgrade-images.mjs
 ```
 
 ---
@@ -150,7 +152,7 @@ npm run setup <用户名> <密码>
 npm run setup <用户名> <新密码>
 ```
 
-访问 `/admin`，输入用户名密码登录。
+密码至少 12 字符；生产执行设置脚本时需指定 `SIA_DATA_DIR=/var/lib/siaplog`。修改密码会撤销该账户全部会话。访问 `/admin` 登录，会话有效期 8 小时，登出会撤销当前会话。
 
 管理后台功能：
 
@@ -165,138 +167,37 @@ npm run setup <用户名> <新密码>
 
 ## 服务器部署
 
-### 环境要求
+生产部署及备份恢复说明见 [OPERATIONS.md](OPERATIONS.md)。环境使用 Node.js 24.x，当前验证版本为 `.nvmrc` 中的 24.18.0。
 
-- Ubuntu 20.04+ / Debian 11+
-- Node.js 18+（推荐 20 LTS）
-- Nginx（可选，用于 80/443 端口反代）
-- Git
+- 代码位于 `/var/www/sia-plog`，API 由 `siaplog.service` 管理，使用 systemd 动态低权限用户，只监听 `127.0.0.1:3001`。
+- 数据库、上传和音频位于 `/var/lib/siaplog`；运行时与密钥不进入 Git。
+- `/etc/siaplog/app.env` 仅 root 可读，必须配置强随机 `JWT_SECRET`。参考 [.env.example](.env.example)，轮换密钥会使原登录失效。
+- [deploy/siaplog.service](deploy/siaplog.service) 指定项目内独立 Node 二进制 `.runtime/node`，避免依赖 root 主目录。
+- Nginx 配置见 [deploy/nginx.conf](deploy/nginx.conf)，转发 API、图片及音频，构建资源长期缓存，HTML 每次验证更新。
+- 博客保留 HTTP，Suwayomi 保留既有 HTTPS 与证书续期路径。
+- [deploy/siaplog-backup.timer](deploy/siaplog-backup.timer) 每天北京时间 03:00 开始，随机延后最多 5 分钟。本机备份保留 30 次，包含数据库、图片、音频和恢复检查，没有配置异地备份。
 
-### 首次部署
+发布前在独立目录按锁定文件安装依赖并检查：
 
 ```bash
-# 1. 克隆项目
-git clone git@github.com:monaksia/sia-plog.git
-cd sia-plog
-
-# 2. 安装依赖
-npm install
-
-# 3. 构建前端
+npm ci
+npm run check
+npm test
 npm run build
-
-# 4. 创建管理员账户
-npm run setup admin 你的密码
-
-# 5. 启动服务
-npm start
-# 访问 http://你的IP:3001
 ```
 
-### PM2 守护进程（推荐）
+更新前先完成一致备份，再发布经过验证的代码及构建，保留持久化目录、密钥及 Node 运行时；应用启动会执行版本化数据库迁移。不要在运行中的项目内直接覆盖依赖或复制单个数据库文件。
 
 ```bash
-# 安装 PM2
-npm install -g pm2
-
-# 启动
-pm2 start server/index.js --name sia-plog
-
-# 常用命令
-pm2 status              # 查看状态
-pm2 logs sia-plog       # 查看日志
-pm2 restart sia-plog    # 重启
-
-# 开机自启
-pm2 save
-pm2 startup             # 按输出提示执行对应命令
+systemctl status siaplog --no-pager
+journalctl -u siaplog -n 100 --no-pager
+systemctl restart siaplog
+curl -f http://127.0.0.1:3001/api/health
+nginx -t && systemctl reload nginx
+systemctl list-timers siaplog-backup.timer
 ```
 
-### Nginx 反向代理
-
-参考项目中的 `nginx.conf.example`：
-
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
-
-    # 上传文件大小限制
-    client_max_body_size 20m;
-
-    # 上传图片（含缩略图）+ 浏览器缓存
-    location /uploads/ {
-        alias /home/your-user/sia-plog/server/uploads/;
-        expires 7d;
-        add_header Cache-Control "public, immutable";
-    }
-
-    # 本地音乐文件
-    location /audio/ {
-        alias /home/your-user/sia-plog/public/audio/;
-    }
-
-    # API 转发
-    location /api/ {
-        proxy_pass http://127.0.0.1:3001;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-
-    # 静态文件 + SPA 回退
-    location / {
-        root /home/your-user/sia-plog/dist;
-        index index.html;
-        try_files $uri $uri/ /index.html;
-    }
-}
-```
-
-```bash
-# 启用站点
-sudo ln -s /etc/nginx/sites-available/sia-plog /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
-
-# HTTPS（可选，Let's Encrypt 免费证书）
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com
-```
-
-### 后续更新
-
-```bash
-cd /var/www/sia-plog
-git pull
-npm install              # 依赖无变化可跳过
-npm run build
-pm2 restart sia-plog
-```
-
-### 常见问题
-
-**端口被占用**
-```bash
-lsof -i :3001            # 查看占用进程
-kill -9 <PID>            # 结束进程
-```
-
-**PM2 启动失败**
-```bash
-pm2 logs sia-plog --lines 50
-```
-
-**上传图片 404**
-- 检查 `server/uploads/` 目录是否存在且有写入权限
-- Nginx 确保 `alias` 路径使用**绝对路径**且以 `/` 开头
-- 确认 `client_max_body_size` 不小于 20m
-
-**音乐文件不播放 (production)**
-- 确认 Nginx 配置中有 `/audio/` 的 `alias` 块
-- 音乐文件必须放在 `public/audio/`（不是 `dist/audio/`）
-
-**页面空白 / 样式异常**
-- 确认执行了 `npm run build` 重新构建前端
-- 清除浏览器缓存（Ctrl+Shift+R）
+PM2 仅作为 `deploy/ecosystem.config.cjs` 中的可选替代方案，需自行配置服务权限和环境变量，不应与 systemd 同时运行 API。
 
 ---
 
@@ -362,7 +263,7 @@ sia-plog/
 │   │       ├── BooksManager.jsx
 │   │       ├── ReviewEditor.jsx
 │   │       └── ReviewEditPage.jsx
-│   ├── data/                     # 静态示例数据（API 离线回退）
+│   ├── data/                     # 未用于 API 失败回退的示例数据
 │   │   ├── photos.js
 │   │   ├── movies.js
 │   │   └── books.js
@@ -386,7 +287,6 @@ sia-plog/
 | 路由 | React Router | ^7.18 |
 | 动效 | framer-motion | ^12.4 |
 | Markdown | react-markdown | ^10.1 |
-| 照片布局 | react-photo-album | ^3.6 |
 | 样式 | CSS Custom Properties（Magazine Editorial） | — |
 | 后端 | Express | ^5.2 |
 | 数据库 | SQLite (better-sqlite3) | ^13.0 |
@@ -399,18 +299,20 @@ sia-plog/
 
 ## 数据存储
 
-- **数据库**：`server/data.db`（自动创建，已 gitignore）
-- **上传图片**：`server/uploads/`（已 gitignore）
-- **回退数据**：`src/data/` — API 离线时自动使用
+- **开发数据**：`server/data.db` 与 `server/uploads/`，可用 `SIA_DATA_DIR` 覆盖。
+- **生产数据**：`/var/lib/siaplog/data.db`、`uploads/`、`audio/`，独立于代码和构建。
+- **接口失败**：前台显示错误和重试入口，不自动展示示例内容。
 
-数据库包含四张表：
+主要内容表及会话、迁移记录：
 
 | 表 | 字段 |
 |----|------|
-| `users` | username, password_hash, created_at |
-| `photos` | src, alt, camera, location, date_taken, notes, thumb |
+| `users` | username, password_hash, active, token_version, created_at |
+| `photos` | src, alt, camera, location, date_taken, notes, thumb, medium |
 | `movies` | slug, title, title_en, poster, year, director, cast, genre, rating, tags, excerpt, review |
 | `books` | slug, title, title_en, author, cover, year, publisher, genre, rating, tags, excerpt, review |
+| `sessions` | jti, user_id, expires_at |
+| `schema_migrations` | version, applied_at |
 
 ---
 
@@ -454,6 +356,7 @@ MIT License
 
 | 日期 | 事项 |
 |------|------|
+| 2026-10 | JWT 强随机密钥与可撤销会话、图片验证及响应式变体、前端分包、低权限 systemd、本机校验备份与 CI |
 | 2026-07 | 杂志编辑风格全面改版：Swiss Modernism 2.0 + Libre Bodoni / Public Sans，近黑 + 粉配色 |
 | 2026-07 | framer-motion 页面过渡 + IntersectionObserver 全局滚动揭示 |
 | 2026-07 | 摄影页重构：杂志跨页布局（hero / spread / grid）、筛选栏、胶片条灯箱 |

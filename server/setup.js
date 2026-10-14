@@ -14,8 +14,8 @@ if (args.length < 2) {
 }
 
 const [username, password] = args;
-if (password.length < 6) {
-  console.error('错误: 密码至少 6 个字符');
+if (password.length < 12) {
+  console.error('错误: 密码至少 12 个字符');
   process.exit(1);
 }
 
@@ -23,7 +23,10 @@ const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(usern
 if (existing) {
   // 更新密码
   const hash = bcrypt.hashSync(password, 10);
-  db.prepare('UPDATE users SET password_hash = ? WHERE username = ?').run(hash, username);
+  db.transaction(() => {
+    db.prepare('UPDATE users SET password_hash = ?, token_version = token_version + 1 WHERE username = ?').run(hash, username);
+    db.prepare('DELETE FROM sessions WHERE user_id = ?').run(existing.id);
+  })();
   console.log(`✅ 管理员 "${username}" 密码已更新`);
 } else {
   const hash = bcrypt.hashSync(password, 10);
@@ -31,4 +34,4 @@ if (existing) {
   console.log(`✅ 管理员 "${username}" 创建成功`);
 }
 
-process.exit(0);
+db.close();

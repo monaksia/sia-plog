@@ -1,0 +1,28 @@
+[Unit]
+Description=Sia Plog API
+After=network.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+StateDirectory=siaplog
+StateDirectoryMode=0750
+WorkingDirectory=/var/www/sia-plog
+EnvironmentFile=/etc/siaplog/app.env
+ExecStart=/var/www/sia-plog/.runtime/node /var/www/sia-plog/server/index.js
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=15
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+RestrictSUIDSGID=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

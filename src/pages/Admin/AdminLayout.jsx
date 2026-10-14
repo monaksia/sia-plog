@@ -1,13 +1,12 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { setToken } from '../../api';
+import { setToken, logout } from '../../api';
 import './Admin.css';
 
 function AdminLayout() {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    setToken(null);
-    navigate('/admin/login');
+  const handleLogout = async () => {
+    try { await logout(); } catch { /* The local session is cleared even when the network is unavailable. */ } finally { setToken(null); navigate('/admin/login'); }
   };
 
   return (

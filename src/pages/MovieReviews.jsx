@@ -1,23 +1,16 @@
-import { useState, useEffect } from 'react';
+import useResource from '../hooks/useResource';
+import LoadError from '../components/LoadError';
 import { Link } from 'react-router-dom';
 import StarRating from '../components/StarRating';
 import { getMovies } from '../api';
 import './Reviews.css';
 
 function MovieReviews() {
-  const [movies, setMovies] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getMovies()
-      .then(setMovies)
-      .catch(() => {
-        import('../data/movies').then((m) => setMovies(m.default));
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  const { data, loading, error, retry } = useResource(getMovies);
+  const movies = data || [];
 
   if (loading) return <div className="container"><p>Loading&hellip;</p></div>;
+  if (error) return <div className="container"><LoadError error={error} retry={retry} /></div>;
 
   return (
     <div className="container">

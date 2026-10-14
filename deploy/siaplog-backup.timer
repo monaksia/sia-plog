@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Sia Plog backup with restore verification
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 Asia/Shanghai
+Persistent=yes
+RandomizedDelaySec=300
+Unit=siaplog-backup.service
+
+[Install]
+WantedBy=timers.target

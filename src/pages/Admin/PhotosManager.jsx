@@ -1,18 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import useResource from '../../hooks/useResource';
+import LoadError from '../../components/LoadError';
 import { getPhotos, uploadPhoto, updatePhoto, deletePhoto } from '../../api';
 
-const INITIAL_EDIT = { alt: '', camera: '', location: '', date_taken: '', notes: '' };
+const INITIAL_EDIT = { alt: '', camera: '', location: '', date_taken: '', notes: '', sort_order: 0 };
 
 function PhotosManager() {
-  const [photos, setPhotos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data, loading, error, retry } = useResource(getPhotos);
+  const photos = data || [];
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(null); // { id, ...fields }
   const [editForm, setEditForm] = useState(INITIAL_EDIT);
 
-  const fetch = () => getPhotos().then(setPhotos).finally(() => setLoading(false));
-
-  useEffect(() => { fetch(); }, []);
+  const fetch = retry;
 
   // Upload with optional metadata
   const [uploadError, setUploadError] = useState(null);
@@ -32,6 +32,7 @@ function PhotosManager() {
       setUploadError(err.message);
     } finally {
       setUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -44,26 +45,28 @@ function PhotosManager() {
       location: p.location || '',
       date_taken: p.date_taken || '',
       notes: p.notes || '',
+      sort_order: p.sort_order ?? 0,
     });
   };
 
   // Save edit
   const saveEdit = async () => {
-    await updatePhoto(editing, editForm);
-    setEditing(null);
-    setEditForm(INITIAL_EDIT);
-    fetch();
+    try {
+      await updatePhoto(editing, { ...editForm, sort_order: Number(editForm.sort_order) });
+      setEditing(null); setEditForm(INITIAL_EDIT); setUploadError(null); fetch();
+    } catch (err) { setUploadError(err.message); }
   };
 
   const handleDelete = async (id) => {
     if (!confirm('确定删除？')) return;
-    await deletePhoto(id);
-    fetch();
+    try { await deletePhoto(id); setUploadError(null); fetch(); }
+    catch (err) { setUploadError(err.message); }
   };
 
   const setField = (key) => (e) => setEditForm({ ...editForm, [key]: e.target.value });
 
   if (loading) return <p>加载中...</p>;
+  if (error) return <LoadError error={error} retry={retry} />;
 
   return (
     <div>
@@ -72,7 +75,7 @@ function PhotosManager() {
       <div className="admin-toolbar">
         <label className="admin-btn">
           {uploading ? '上传中...' : '+ 上传照片'}
-          <input type="file" accept="image/*" onChange={handleUpload} hidden />
+          <input type="file" accept="image/*" onChange={handleUpload} disabled={uploading} hidden />
         </label>
         {uploadError && <span className="admin-upload-error">{uploadError}</span>}
       </div>
@@ -119,6 +122,7 @@ function PhotosManager() {
                 <span>拍摄时间</span>
                 <input value={editForm.date_taken} onChange={setField('date_taken')} placeholder="例如：2025.03.14" />
               </label>
+              <label><span>排序（较大值靠前）</span><input type="number" value={editForm.sort_order} onChange={setField('sort_order')} /></label>
               <label className="photo-edit-wide">
                 <span>备注/感想</span>
                 <textarea
@@ -129,6 +133,7 @@ function PhotosManager() {
                 />
               </label>
             </div>
+            {uploadError && <p role="alert" className="admin-error">{uploadError}</p>}
             <div className="photo-edit-actions">
               <button className="admin-btn" onClick={saveEdit}>保存</button>
               <button className="admin-btn" onClick={() => setEditing(null)} style={{ background: 'transparent', color: 'var(--color-text-dim)', border: 'var(--border-thin)' }}>取消</button>

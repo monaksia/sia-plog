@@ -1,53 +1,17 @@
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import authRoutes from './routes/auth.js';
-import photoRoutes from './routes/photos.js';
-import movieRoutes from './routes/movies.js';
-import bookRoutes from './routes/books.js';
-import musicRoutes from './routes/music.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const app = express();
-const PORT = process.env.PORT || 3001;
-const isDev = process.env.NODE_ENV !== 'production';
-
-app.use(express.json());
-
-// API 路由
-app.use('/api/auth', authRoutes);
-app.use('/api/photos', photoRoutes);
-app.use('/api/movies', movieRoutes);
-app.use('/api/books', bookRoutes);
-app.use('/api/music', musicRoutes);
-
-// 上传文件静态访问
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// 本地音乐文件静态访问（始终从 public/audio/ 读取）
-app.use('/audio', express.static(path.join(__dirname, '..', 'public', 'audio')));
-
-// 生产环境：提供前端静态文件
-const distDir = path.join(__dirname, '..', 'dist');
-app.use(express.static(distDir));
-
-// SPA fallback：所有非 API 请求回退到 index.html
-app.get('/{*path}', (_req, res) => {
-  res.sendFile(path.join(distDir, 'index.html'));
-});
-
-// 全局错误处理 — API 错误返回 JSON 而非 HTML
-app.use((err, _req, res, _next) => {
-  console.error('[Server Error]', err);
-  if (_req.path.startsWith('/api/')) {
-    const status = err.status || err.statusCode || 500;
-    res.status(status).json({ error: err.message || '服务器内部错误' });
-  } else {
-    res.status(500).sendFile(path.join(distDir, 'index.html'));
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`[Server] http://localhost:${PORT}`);
-  console.log(`[Server] 图片存储: ${path.join(__dirname, 'uploads')}`);
-});
+import { app } from './app.js';
+import db from './db.js';
+const port = Number(process.env.PORT || 3001);
+const host = process.env.HOST || '127.0.0.1';
+const server = app.listen(port, host, () => console.log(JSON.stringify({ event: 'server_started', host, port, nodeEnv: process.env.NODE_ENV || 'development' })));
+let stopping = false;
+function stop(signal) {
+  if (stopping) return;
+  stopping = true;
+  console.log(JSON.stringify({ event: 'server_stopping', signal }));
+  const timer = setTimeout(() => { server.closeAllConnections(); db.close(); process.exit(1); }, 10_000);
+  timer.unref();
+  server.close(() => { clearTimeout(timer); db.close(); process.exit(0); });
+}
+process.on('SIGTERM', () => stop('SIGTERM'));
+process.on('SIGINT', () => stop('SIGINT'));
+server.on('error', error => { console.error(JSON.stringify({ event: 'server_error', code: error.code })); db.close(); process.exit(1); });

@@ -1,3 +1,5 @@
+import useResource from '../hooks/useResource';
+import LoadError from '../components/LoadError';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getPhotos } from '../api';
 import './Photography.css';
@@ -20,20 +22,11 @@ function extractFilters(photos) {
 }
 
 function Photography() {
-  const [photos, setPhotos] = useState([]);
+  const { data, loading, error, retry } = useResource(getPhotos);
+  const photos = data || [];
   const [lightbox, setLightbox] = useState(null);
   const [visible, setVisible] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
-
-  useEffect(() => {
-    getPhotos()
-      .then(setPhotos)
-      .catch(() => {
-        import('../data/photos').then((p) => setPhotos(p.default));
-      })
-      .finally(() => setLoading(false));
-  }, []);
 
   useEffect(() => {
     if (!loading && photos.length > 0) {
@@ -54,6 +47,8 @@ function Photography() {
       );
     });
   }, [photos, filter]);
+
+  const photoSources = (p) => p.medium ? `${p.thumb || p.src} ${Math.min(p.width || 2000, 400)}w, ${p.medium} ${Math.min(p.width || 2000, 1000)}w, ${p.src} ${p.width || 2000}w` : undefined;
 
   const openLightbox = useCallback((index) => setLightbox(index), []);
   const closeLightbox = useCallback(() => setLightbox(null), []);
@@ -104,6 +99,8 @@ function Photography() {
     );
   }
 
+  if (error) return <div className="photo-wall-container"><h1>Photography</h1><LoadError error={error} retry={retry} /></div>;
+
   const hero = filteredPhotos[0];
   const spread = filteredPhotos.slice(1, 3);
   const grid = filteredPhotos.slice(3);
@@ -120,7 +117,7 @@ function Photography() {
             <button
               key={f}
               className={`photo-filter-pill${filter === f ? ' active' : ''}`}
-              onClick={() => setFilter(f)}
+              onClick={() => { setFilter(f); setLightbox(null); }}
             >
               {f === 'all' ? 'All' : f}
             </button>
@@ -136,7 +133,7 @@ function Photography() {
               className="photo-hero reveal reveal-up"
               onClick={() => openLightbox(0)}
             >
-              <img src={hero.src} alt={hero.alt || ''} loading="lazy" />
+              <img src={hero.medium || hero.src} srcSet={photoSources(hero)} sizes="(max-width: 640px) 100vw, 1200px" alt={hero.alt || ''} width={hero.width} height={hero.height} loading="eager" fetchPriority="high" decoding="async" />
               <figcaption className="photo-figcaption">
                 <span className="photo-fig-num">FIG. 01</span>
                 {hero.alt && <span className="photo-fig-title">{hero.alt}</span>}
@@ -157,7 +154,7 @@ function Photography() {
                   style={{ transitionDelay: `${(i + 1) * 100}ms` }}
                   onClick={() => openLightbox(i + 1)}
                 >
-                  <img src={photo.src} alt={photo.alt || ''} loading="lazy" />
+                  <img src={photo.medium || photo.src} srcSet={photoSources(photo)} sizes="(max-width: 640px) 100vw, 50vw" alt={photo.alt || ''} width={photo.width} height={photo.height} loading="lazy" decoding="async" />
                   <figcaption className="photo-figcaption">
                     <span className="photo-fig-num">FIG. {String(i + 2).padStart(2, '0')}</span>
                     {photo.alt && <span className="photo-fig-title">{photo.alt}</span>}
@@ -180,7 +177,7 @@ function Photography() {
                   style={{ transitionDelay: `${(i % 3) * 80}ms` }}
                   onClick={() => openLightbox(i + 3)}
                 >
-                  <img src={photo.thumb || photo.src} alt={photo.alt || ''} loading="lazy" />
+                  <img src={photo.thumb || photo.src} srcSet={photoSources(photo)} sizes="(max-width: 640px) 100vw, 33vw" alt={photo.alt || ''} width={photo.width} height={photo.height} loading="lazy" decoding="async" />
                   <figcaption className="photo-figcaption">
                     <span className="photo-fig-num">FIG. {String(i + 4).padStart(2, '0')}</span>
                     {photo.alt && <span className="photo-fig-title">{photo.alt}</span>}

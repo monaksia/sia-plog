@@ -127,7 +127,7 @@ function AudioPlayer() {
   if (tracks.length === 0) {
     return (
       <div className="music-player">
-        <p className="music-hint">暂无本地音乐，将文件放入 public/audio/ 目录</p>
+        <p className="music-hint">暂无本地音乐，稍后再来听听吧</p>
       </div>
     );
   }
@@ -184,7 +184,7 @@ function AudioPlayer() {
         onEnded={handleEnded}
         onError={handleError}
         onPlaying={handlePlaying}
-        preload="auto"
+        preload="metadata"
       />
     </div>
   );

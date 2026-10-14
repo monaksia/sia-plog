@@ -1,11 +1,10 @@
 import Database from 'better-sqlite3';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'node:fs';
+import { DATA_DIR, DB_PATH } from './config.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.join(__dirname, 'data.db');
-
+fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o750 });
 const db = new Database(DB_PATH);
+db.pragma('busy_timeout = 5000');
 
 // 启用 WAL 模式提高并发
 db.pragma('journal_mode = WAL');
@@ -71,23 +70,39 @@ db.exec(`
   );
 `);
 
-// Migration: safely add new columns to existing tables
-function safeAlter(table, column, type) {
-  try {
-    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
-  } catch (_) {
-    // column already exists — ignore
+
+// Each migration commits with its version record; errors abort startup.
+db.exec('CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)');
+const migrations = [
+  () => {
+    for (const column of ['location', 'date_taken', 'notes']) {
+      if (!db.pragma('table_info(photos)').some(c => c.name === column)) {
+        db.exec(`ALTER TABLE photos ADD COLUMN ${column} TEXT NOT NULL DEFAULT ''`);
+      }
+    }
+    db.exec(`ALTER TABLE users ADD COLUMN active INTEGER NOT NULL DEFAULT 1;
+      ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0;
+      CREATE TABLE sessions (
+        jti TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        expires_at INTEGER NOT NULL
+      );
+      CREATE INDEX sessions_expiry ON sessions(expires_at);`);
+  },
+  () => {
+    db.exec(`ALTER TABLE photos ADD COLUMN thumb TEXT NOT NULL DEFAULT '';
+      ALTER TABLE photos ADD COLUMN medium TEXT NOT NULL DEFAULT '';
+      CREATE INDEX photos_order ON photos(sort_order DESC, created_at DESC, id DESC);
+      CREATE INDEX movies_order ON movies(created_at DESC, id DESC);
+      CREATE INDEX books_order ON books(created_at DESC, id DESC);`);
+  },
+];
+for (const [index, migration] of migrations.entries()) {
+  const version = index + 1;
+  if (!db.prepare('SELECT version FROM schema_migrations WHERE version = ?').get(version)) {
+    db.transaction(() => {
+      migration();
+      db.prepare('INSERT INTO schema_migrations(version) VALUES (?)').run(version);
+    })();
   }
 }
-
-safeAlter('photos', 'location', "TEXT DEFAULT ''");
-safeAlter('photos', 'date_taken', "TEXT DEFAULT ''");
-safeAlter('photos', 'notes', "TEXT DEFAULT ''");
-
-// 插入示例数据（仅首次）
-const userCount = db.prepare('SELECT COUNT(*) as c FROM users').get();
-if (userCount.c === 0) {
-  console.log('[DB] 首次启动，请运行 node server/setup.js <用户名> <密码> 创建管理员');
-}
-
 export default db;

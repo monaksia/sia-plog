@@ -1,19 +1,20 @@
-node_modules
-dist
-dist.zip
+node_modules/
+dist/
+.vite/
+.runtime/
 *.zip
-.vite
-server/data.db
-server/data.db-wal
-server/data.db-shm
-server/uploads/*.jpg
-server/uploads/*.jpeg
-server/uploads/*.png
-server/uploads/*.webp
-server/uploads/*.svg
+.env
+.env.*
+!.env.example
+server/data.db*
+server/uploads/**
 !server/uploads/.gitkeep
+server/tmp/
+public/audio/
+backups/
+coverage/
 
-# Claude/Agent skills（本地安装，不属于项目代码）
+# Claude/Agent skills are installed locally.
 .agents/skills/
 .claude/skills/
 skills-lock.json

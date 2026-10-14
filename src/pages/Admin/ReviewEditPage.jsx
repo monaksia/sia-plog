@@ -1,103 +1,68 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ReviewEditor from './ReviewEditor';
-import {
-  getMovie, getBook,
-  createMovie, createBook,
-  updateMovie, updateBook,
-  deleteMovie, deleteBook,
-  uploadMoviePoster, uploadBookCover,
-} from '../../api';
+import LoadError from '../../components/LoadError';
+import useResource from '../../hooks/useResource';
+import { getMovie, getBook, createMovie, createBook, updateMovie, updateBook,
+  deleteMovie, deleteBook, uploadMoviePoster, uploadBookCover } from '../../api';
 
-/**
- * 编辑或新建影评/书评
- * URL: /admin/movies/:slug 或 /admin/books/:slug
- * 当 slug === 'new' 时为新建
- */
 function ReviewEditPage({ type }) {
   const { slug } = useParams();
   const navigate = useNavigate();
   const isNew = slug === 'new';
   const isMovie = type === 'movie';
-
-  const [item, setItem] = useState(null);
-  const [loading, setLoading] = useState(!isNew);
   const [saveError, setSaveError] = useState('');
-
-  useEffect(() => {
-    if (isNew) { setItem(null); setLoading(false); return; }
-    const fetcher = isMovie ? getMovie : getBook;
-    fetcher(slug)
-      .then((data) => {
-        setItem({
-          ...data,
-          genre: Array.isArray(data.genre) ? data.genre.join(', ') : (data.genre || ''),
-          tags: Array.isArray(data.tags) ? data.tags.join(', ') : (data.tags || ''),
-          cast: Array.isArray(data.cast) ? data.cast.join(', ') : (data.cast || ''),
-        });
-      })
-      .catch(() => navigate(`/admin/${type}s`))
-      .finally(() => setLoading(false));
-  }, [slug, isNew, isMovie, navigate, type]);
-
-  const handleSave = async (formData) => {
-    setSaveError('');
+  const [notice, setNotice] = useState('');
+  const [coverUrl, setCoverUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const load = useCallback(options => isNew ? Promise.resolve(null) : (isMovie ? getMovie : getBook)(slug, options), [slug, isNew, isMovie]);
+  const { data, loading, error, retry } = useResource(load);
+  const item = useMemo(() => data ? { ...data,
+    genre: Array.isArray(data.genre) ? data.genre.join(', ') : data.genre || '',
+    tags: Array.isArray(data.tags) ? data.tags.join(', ') : data.tags || '',
+    cast: Array.isArray(data.cast) ? data.cast.join(', ') : data.cast || '',
+  } : null, [data]);
+  useEffect(() => { setCoverUrl(data?.[isMovie ? 'poster' : 'cover'] || ''); setSaveError(''); setNotice(''); }, [data, isMovie]);
+  const handleSave = async form => {
+    setSaveError(''); setNotice('');
     try {
+      // Cover uploads have their own endpoint; metadata saves must not restore an old cover URL.
+      const { poster: _poster, cover: _cover, ...editable } = form;
       if (isNew) {
-        const creator = isMovie ? createMovie : createBook;
-        const result = await creator(formData);
+        const result = await (isMovie ? createMovie : createBook)(editable);
         navigate(`/admin/${type}s/${result.slug}`, { replace: true });
-      } else {
-        const updater = isMovie ? updateMovie : updateBook;
-        await updater(slug, formData);
-        alert('已保存');
-      }
-    } catch (err) {
-      setSaveError(err.message || '保存失败，请检查网络或重新登录');
-    }
+      } else { await (isMovie ? updateMovie : updateBook)(slug, editable); setNotice('已保存'); }
+    } catch (err) { setSaveError(err.message); }
   };
-
   const handleDelete = async () => {
     if (!confirm('确定删除？此操作不可恢复。')) return;
-    const deleter = isMovie ? deleteMovie : deleteBook;
-    await deleter(slug);
-    navigate(`/admin/${type}s`);
+    try { await (isMovie ? deleteMovie : deleteBook)(slug); navigate(`/admin/${type}s`); }
+    catch (err) { setSaveError(err.message); }
   };
-
-  const handleUploadCover = async (e) => {
-    const file = e.target.files[0];
+  const handleUploadCover = async e => {
+    const input = e.target, file = input.files[0];
     if (!file) return;
-    const uploader = isMovie ? uploadMoviePoster : uploadBookCover;
-    const fd = new FormData();
-    fd.append('image', file);
-    const uploadResult = await uploader(slug, fd);
-    setItem({ ...item, [isMovie ? 'poster' : 'cover']: uploadResult.src });
+    setUploading(true); setSaveError(''); setNotice('');
+    try {
+      const fd = new FormData(); fd.append('image', file);
+      const result = await (isMovie ? uploadMoviePoster : uploadBookCover)(slug, fd);
+      setCoverUrl(result.src); setNotice('封面已更新');
+    } catch (err) { setSaveError(err.message); }
+    finally { setUploading(false); input.value = ''; }
   };
-
-  if (loading) return <div className="admin-container"><p>加载中...</p></div>;
-
-  return (
-    <div>
-      <h1>{isNew ? (isMovie ? '新建影评' : '新建书评') : '编辑'}</h1>
-      <hr />
-      {!isNew && (
-        <div className="admin-toolbar">
-          <label className="admin-btn admin-btn-sm">
-            上传{isMovie ? '海报' : '封面'}
-            <input type="file" accept="image/*" onChange={handleUploadCover} hidden />
-          </label>
-          {item && <img src={item[isMovie ? 'poster' : 'cover'] || ''} alt="" className="admin-thumb" />}
-        </div>
-      )}
-      {saveError && <p className="admin-error" style={{marginBottom: 'var(--space-md)'}}>{saveError}</p>}
-      <ReviewEditor
-        type={type}
-        initial={item}
-        onSave={handleSave}
-        onDelete={isNew ? null : handleDelete}
-      />
-    </div>
-  );
+  if (loading) return <p>加载中…</p>;
+  if (error) return <LoadError error={error} retry={retry} />;
+  return <div>
+    <h1>{isNew ? (isMovie ? '新建影评' : '新建书评') : '编辑'}</h1><hr />
+    {!isNew && <div className="admin-toolbar">
+      <label className="admin-btn admin-btn-sm">{uploading ? '上传中…' : `上传${isMovie ? '海报' : '封面'}`}
+        <input type="file" accept="image/*" onChange={handleUploadCover} disabled={uploading} hidden />
+      </label>
+      {coverUrl && <img src={coverUrl} alt="封面预览" className="admin-thumb" />}
+    </div>}
+    {saveError && <p role="alert" className="admin-error">{saveError}</p>}
+    {notice && <p role="status">{notice}</p>}
+    <ReviewEditor key={`${type}/${slug}`} type={type} initial={item} onSave={handleSave} onDelete={isNew ? null : handleDelete} />
+  </div>;
 }
-
 export default ReviewEditPage;

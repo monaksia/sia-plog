@@ -1,22 +1,24 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import AdminGuard from './components/AdminGuard';
 import Home from './pages/Home';
-import Photography from './pages/Photography';
-import MovieReviews from './pages/MovieReviews';
-import BookReviews from './pages/BookReviews';
-import ReviewDetail from './pages/ReviewDetail';
-import AdminLayout from './pages/Admin/AdminLayout';
-import AdminLogin from './pages/Admin/AdminLogin';
-import Dashboard from './pages/Admin/Dashboard';
-import PhotosManager from './pages/Admin/PhotosManager';
-import MoviesManager from './pages/Admin/MoviesManager';
-import BooksManager from './pages/Admin/BooksManager';
-import ReviewEditPage from './pages/Admin/ReviewEditPage';
+const Photography = lazy(() => import('./pages/Photography'));
+const MovieReviews = lazy(() => import('./pages/MovieReviews'));
+const BookReviews = lazy(() => import('./pages/BookReviews'));
+const ReviewDetail = lazy(() => import('./pages/ReviewDetail'));
+const AdminLayout = lazy(() => import('./pages/Admin/AdminLayout'));
+const AdminLogin = lazy(() => import('./pages/Admin/AdminLogin'));
+const Dashboard = lazy(() => import('./pages/Admin/Dashboard'));
+const PhotosManager = lazy(() => import('./pages/Admin/PhotosManager'));
+const MoviesManager = lazy(() => import('./pages/Admin/MoviesManager'));
+const BooksManager = lazy(() => import('./pages/Admin/BooksManager'));
+const ReviewEditPage = lazy(() => import('./pages/Admin/ReviewEditPage'));
 
 function App() {
   return (
     <BrowserRouter>
+      <Suspense fallback={<div className="container" role="status"><p>加载中…</p></div>}>
       <Routes>
         {/* 前台 */}
         <Route element={<Layout />}>
@@ -45,7 +47,9 @@ function App() {
           <Route path="books" element={<BooksManager />} />
           <Route path="books/:slug" element={<ReviewEditPage type="book" />} />
         </Route>
+        <Route path="*" element={<div className="container"><h1>页面不存在</h1><a href="/">返回首页</a></div>} />
       </Routes>
+    </Suspense>
     </BrowserRouter>
   );
 }

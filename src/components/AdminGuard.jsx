@@ -10,10 +10,12 @@ function AdminGuard({ children }) {
   const location = useLocation();
 
   useEffect(() => {
-    if (!getToken()) { setStatus('fail'); return; }
-    checkAuth()
-      .then(() => setStatus('ok'))
-      .catch(() => setStatus('fail'));
+    let active = true;
+    const expire = () => setStatus('fail');
+    window.addEventListener('auth-expired', expire);
+    if (!getToken()) setStatus('fail');
+    else checkAuth().then(() => { if (active) setStatus('ok'); }).catch(() => { if (active) setStatus('fail'); });
+    return () => { active = false; window.removeEventListener('auth-expired', expire); };
   }, []);
 
   if (status === 'loading') {

@@ -834,3 +834,6 @@ img {
     --text-2xl: 1.5rem;
   }
 }
+
+.load-error { padding: 1.5rem 0; }
+.load-error p { margin-bottom: 1rem; }
