@@ -46,11 +46,22 @@ export function reviewInput(body, fields, existing = null) {
       result[field] = text(value, field, { required: field === 'title', max: field === 'review' ? 200_000 : field === 'excerpt' ? 2000 : 1000 });
     }
   }
-  let slug = body.slug ?? existing?.slug ?? result.title.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\p{L}\p{N}_-]/gu, '');
-  if (!slug) slug = Date.now().toString(36);
+  const suppliedSlug = typeof body.slug === 'string' ? body.slug.trim() : body.slug;
+  let slug = suppliedSlug === '' ? undefined : suppliedSlug;
+  slug ??= existing?.slug;
+  const autoSlug = slug == null;
+  if (autoSlug) {
+    const fromTitle = result.title.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\p{L}\p{N}_-]/gu, '');
+    slug = Array.from(fromTitle).slice(0, 120).join('').replace(/-+$/, '');
+    if (slug === 'new') slug = 'new-review';
+    if (!slug) slug = Date.now().toString(36);
+  }
   if (typeof slug !== 'string' || !/^[\p{L}\p{N}_-]{1,120}$/u.test(slug) || slug === 'new') throw badRequest('slug 格式无效');
   if (existing && slug !== existing.slug) throw badRequest('已发布内容的 slug 不可修改');
-  return { ...result, slug };
+  const status = Object.hasOwn(body, 'status') ? body.status : existing?.status ?? 'published';
+  if (status !== 'draft' && status !== 'published') throw badRequest('发布状态无效');
+  if (existing?.status === 'published' && status === 'draft') throw badRequest('已发布内容不能转为草稿');
+  return { ...result, slug, status, autoSlug };
 }
 export function photoInput(body, existing = null) {
   objectBody(body);

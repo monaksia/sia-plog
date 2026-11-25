@@ -7,6 +7,7 @@ import photoRoutes from './routes/photos.js';
 import movieRoutes from './routes/movies.js';
 import bookRoutes from './routes/books.js';
 import musicRoutes from './routes/music.js';
+import { decoratePhoto } from './lib/images.js';
 import { UPLOADS_DIR, TEMP_DIR, AUDIO_DIR, DIST_DIR } from './config.js';
 import { promises as fs } from 'node:fs';
 
@@ -29,9 +30,17 @@ app.get('/api/health', (_req, res) => {
 });
 app.use('/api/auth', (_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, authRoutes);
 app.use('/api/photos', photoRoutes);
-app.use('/api/movies', movieRoutes);
-app.use('/api/books', bookRoutes);
+app.use('/api/movies', movieRoutes.router);
+app.use('/api/books', bookRoutes.router);
+app.use('/api/admin/movies', movieRoutes.admin);
+app.use('/api/admin/books', bookRoutes.admin);
 app.use('/api/music', musicRoutes);
+app.get('/api/recent', (_req, res) => {
+  const photo = db.prepare('SELECT id, src, thumb, medium, alt, width, height, location, date_taken FROM photos ORDER BY created_at DESC, id DESC LIMIT 1').get();
+  const movie = db.prepare("SELECT slug, title, excerpt FROM movies WHERE status = 'published' ORDER BY published_at DESC, id DESC LIMIT 1").get();
+  const book = db.prepare("SELECT slug, title, excerpt FROM books WHERE status = 'published' ORDER BY published_at DESC, id DESC LIMIT 1").get();
+  res.set('Cache-Control', 'no-cache').json({ photo: photo ? decoratePhoto(photo) : null, movie: movie ?? null, book: book ?? null });
+});
 app.use('/api', (_req, res) => res.status(404).json({ error: '接口不存在' }));
 const cached = { maxAge: '365d', immutable: true, index: false, dotfiles: 'deny' };
 app.use('/uploads', express.static(UPLOADS_DIR, { ...cached, fallthrough: false }));

@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getPhotos, getMovies, getBooks } from '../../api';
+import { getPhotos, getAdminMovies, getAdminBooks } from '../../api';
 
 function Dashboard() {
   const [counts, setCounts] = useState({ photos: '...', movies: '...', books: '...' });
 
   useEffect(() => {
-    Promise.all([getPhotos(), getMovies(), getBooks()])
+    Promise.all([getPhotos(), getAdminMovies(), getAdminBooks()])
       .then(([p, m, b]) => setCounts({ photos: p.length, movies: m.length, books: b.length }))
       .catch(() => setCounts({ photos: '?', movies: '?', books: '?' }));
   }, []);

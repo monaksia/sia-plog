@@ -9,7 +9,7 @@
 
 ## 功能
 
-- **首页** — 打字机标题 + 杂志封面排版 + 社交 beacon 组件 + 本地音乐播放器
+- **首页** — 杂志封面、近期更新、社交链接和本地音乐播放器
 - **摄影画廊** — 杂志跨页布局（封面大图 / 跨页对开 / 网格画廊）+ 筛选栏 + 胶片条灯箱
 - **影评** — 编辑风卡片列表 + 星级评分 + Markdown 长文（下拉大写、引用块）
 - **书评** — 同上，含作者 / 出版社 / 类型元数据
@@ -160,8 +160,10 @@ npm run setup <用户名> <新密码>
 |------|------|
 | Dashboard | 各模块数据概览 |
 | Photos | 上传 / 编辑 / 删除照片，设置相机型号、地点、拍摄日期、备注 |
-| Movies | 新建 / 编辑 / 删除影评，上传海报，Markdown 正文 |
-| Books | 新建 / 编辑 / 删除书评，上传封面，Markdown 正文 |
+| Movies | 保存草稿、上传海报、预览 Markdown、发布和编辑影评 |
+| Books | 保存草稿、上传封面、预览 Markdown、发布和编辑书评 |
+
+填写标题后可先保存草稿，然后上传封面。预览会使用编辑器里当前的内容，确认后点击「发布」。网址标识留空时按标题生成，重名时自动加数字后缀。
 
 ---
 
@@ -309,8 +311,8 @@ sia-plog/
 |----|------|
 | `users` | username, password_hash, active, token_version, created_at |
 | `photos` | src, alt, camera, location, date_taken, notes, thumb, medium |
-| `movies` | slug, title, title_en, poster, year, director, cast, genre, rating, tags, excerpt, review |
-| `books` | slug, title, title_en, author, cover, year, publisher, genre, rating, tags, excerpt, review |
+| `movies` | slug, title, title_en, poster, year, director, cast, genre, rating, tags, excerpt, review, status, published_at |
+| `books` | slug, title, title_en, author, cover, year, publisher, genre, rating, tags, excerpt, review, status, published_at |
 | `sessions` | jti, user_id, expires_at |
 | `schema_migrations` | version, applied_at |
 

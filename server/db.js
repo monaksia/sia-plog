@@ -95,6 +95,14 @@ const migrations = [
       CREATE INDEX movies_order ON movies(created_at DESC, id DESC);
       CREATE INDEX books_order ON books(created_at DESC, id DESC);`);
   },
+  () => {
+    for (const table of ['movies', 'books']) {
+      db.exec(`ALTER TABLE ${table} ADD COLUMN status TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'published'));
+        ALTER TABLE ${table} ADD COLUMN published_at TEXT;
+        UPDATE ${table} SET published_at = created_at;
+        CREATE INDEX ${table}_published_order ON ${table}(status, published_at DESC, id DESC);`);
+    }
+  },
 ];
 for (const [index, migration] of migrations.entries()) {
   const version = index + 1;

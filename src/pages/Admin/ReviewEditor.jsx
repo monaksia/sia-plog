@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ReviewArticle } from '../ReviewDetail';
 
 /**
  * 通用的影评/书评编辑器
@@ -7,10 +8,10 @@ import { useState, useEffect } from 'react';
  * @param {function} onSave - 保存回调 (data) => Promise
  * @param {function} onDelete - 删除回调 () => Promise（仅编辑模式）
  */
-function ReviewEditor({ type, initial, onSave, onDelete }) {
+function ReviewEditor({ type, initial, status, coverUrl, busy, onSave, onDelete }) {
   const isMovie = type === 'movie';
   const [form, setForm] = useState(initial || getEmpty(isMovie));
-  const [saving, setSaving] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     setForm({ ...getEmpty(isMovie), ...(initial || {}) });
@@ -18,18 +19,16 @@ function ReviewEditor({ type, initial, onSave, onDelete }) {
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setSaving(true);
-    try {
-      await onSave({
-        ...form,
-        rating: parseFloat(form.rating) || 0,
-        year: parseInt(form.year) || null,
-      });
-    } finally {
-      setSaving(false);
-    }
+    if (busy) return;
+    const nextStatus = e.nativeEvent.submitter?.value === 'publish' ? 'published' : status;
+    onSave({
+      ...form,
+      rating: Number(form.rating),
+      year: String(form.year ?? '').trim() === '' ? null : Number(form.year),
+      status: nextStatus,
+    });
   };
 
   const fields = isMovie
@@ -42,11 +41,11 @@ function ReviewEditor({ type, initial, onSave, onDelete }) {
         {fields.map((f) => (
           <label key={f}>
             <span>{fieldLabel(f, isMovie)}</span>
-            <input value={form[f] || ''} onChange={set(f)} />
+            <input value={form[f] ?? ''} onChange={set(f)} required={f === 'title'} />
           </label>
         ))}
         <label className="admin-editor-wide">
-          <span>slug（URL 标识）</span>
+          <span>网址标识{!initial && '（留空时按标题生成）'}</span>
           <input value={form.slug || ''} onChange={set('slug')} readOnly={Boolean(initial)} />
         </label>
         <label className="admin-editor-wide">
@@ -57,24 +56,44 @@ function ReviewEditor({ type, initial, onSave, onDelete }) {
           />
         </label>
         <label className="admin-editor-wide">
-          <span>摘要</span>
-          <textarea rows={2} value={form.excerpt || ''} onChange={set('excerpt')} />
+          <span id="review-excerpt-label">摘要</span>
+          <textarea aria-labelledby="review-excerpt-label" rows={2} value={form.excerpt || ''} onChange={set('excerpt')} />
         </label>
         <label className="admin-editor-wide">
-          <span>正文（Markdown）</span>
-          <textarea rows={12} value={form.review || ''} onChange={set('review')} />
+          <span id="review-text-label">正文（Markdown）</span>
+          <textarea aria-labelledby="review-text-label" rows={12} value={form.review || ''} onChange={set('review')} />
         </label>
       </div>
       <div className="admin-editor-actions">
-        <button type="submit" className="admin-btn" disabled={saving}>
-          {saving ? '保存中...' : 'Save'}
+        <button type="submit" className="admin-btn" disabled={busy}>
+          {status === 'draft' ? '保存草稿' : '保存修改'}
         </button>
+        <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setShowPreview(open => !open)} aria-expanded={showPreview} aria-controls="review-preview">
+          {showPreview ? '收起预览' : '预览'}
+        </button>
+        {initial && status === 'draft' && (
+          <button type="submit" value="publish" className="admin-btn" disabled={busy}>发布</button>
+        )}
         {onDelete && (
-          <button type="button" className="admin-btn danger" onClick={onDelete}>
-            Delete
+          <button type="button" className="admin-btn danger" onClick={onDelete} disabled={busy}>
+            删除
           </button>
         )}
       </div>
+      <section id="review-preview" className="admin-review-preview" hidden={!showPreview} aria-labelledby="review-preview-heading">
+        {showPreview && <>
+          <h2 id="review-preview-heading">文章预览</h2>
+          <ReviewArticle type={type} preview item={{
+            ...form,
+            title: form.title.trim() || '未填写标题',
+            [isMovie ? 'poster' : 'cover']: coverUrl,
+            cast: form.cast?.split(',').map(value => value.trim()).filter(Boolean),
+            genre: form.genre?.split(',').map(value => value.trim()).filter(Boolean),
+            tags: form.tags?.split(',').map(value => value.trim()).filter(Boolean),
+            rating: Number(form.rating) || 0,
+          }} />
+        </>}
+      </section>
     </form>
   );
 }

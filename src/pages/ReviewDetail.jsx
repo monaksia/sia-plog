@@ -5,6 +5,7 @@ import StarRating from '../components/StarRating';
 import { getMovie, getBook } from '../api';
 import useResource from '../hooks/useResource';
 import LoadError from '../components/LoadError';
+import './Reviews.css';
 
 function ReviewDetail({ type }) {
   const { id } = useParams();
@@ -38,16 +39,24 @@ function ReviewDetail({ type }) {
     );
   }
 
-  const genreText = Array.isArray(item.genre) ? item.genre.join(' · ') : item.genre;
-  const tags = Array.isArray(item.tags) ? item.tags : [];
-
   return (
     <div className="container">
-      {/* Editorial breadcrumb */}
       <Link to={`/${isMovie ? 'movies' : 'books'}`} className="review-detail-back">
         &larr; {isMovie ? 'Movies' : 'Books'}
       </Link>
+      <ReviewArticle item={item} type={type} />
+    </div>
+  );
+}
 
+export function ReviewArticle({ item, type, preview = false }) {
+  const isMovie = type === 'movie';
+  const genreText = Array.isArray(item.genre) ? item.genre.join(' · ') : item.genre;
+  const tags = Array.isArray(item.tags) ? item.tags : [];
+  const Title = preview ? 'h3' : 'h1';
+
+  return (
+    <article>
       {/* Magazine article header */}
       <div className="review-detail-header">
         <div className={`review-detail-poster${isMovie ? '' : ' book-cover'}`}>
@@ -63,7 +72,7 @@ function ReviewDetail({ type }) {
         </div>
 
         <div className="review-detail-meta">
-          <h1>{item.title}</h1>
+          <Title className="review-article-title">{item.title}</Title>
           {(item.titleEn || item.title_en) && (
             <p className="review-detail-title-en">{item.titleEn || item.title_en}</p>
           )}
@@ -93,8 +102,8 @@ function ReviewDetail({ type }) {
 
           {tags.length > 0 && (
             <div className="review-tags">
-              {tags.map((tag) => (
-                <span key={tag} className="review-tag">{tag}</span>
+            {[...new Set(tags)].map((tag) => (
+              <span key={tag} className="review-tag">{tag}</span>
               ))}
             </div>
           )}
@@ -107,7 +116,7 @@ function ReviewDetail({ type }) {
       <div className="review-detail-body">
         <ReactMarkdown>{item.review || ''}</ReactMarkdown>
       </div>
-    </div>
+    </article>
   );
 }
 

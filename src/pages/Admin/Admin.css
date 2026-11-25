@@ -469,7 +469,35 @@
 .admin-editor-actions {
   margin-top: var(--space-lg);
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-md);
+}
+
+.admin-review-status {
+  color: var(--color-text-dim);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.admin-btn.admin-btn-secondary {
+  background: var(--color-surface2);
+  color: var(--color-text);
+}
+
+.admin-btn.admin-btn-secondary:hover {
+  background: var(--color-border-bright);
+}
+
+.admin-review-preview {
+  border-top: var(--border-thin);
+  margin-top: var(--space-xl);
+  padding-top: var(--space-md);
+}
+
+.admin-review-preview > h2 {
+  margin-bottom: var(--space-md);
+  color: var(--color-text-dim);
+  font-size: var(--text-base);
 }
 
 .empty-hint {

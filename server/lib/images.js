@@ -8,6 +8,9 @@ import db from '../db.js';
 import { UPLOADS_DIR, TEMP_DIR } from '../config.js';
 import { badRequest } from './errors.js';
 
+// Windows cannot unlink temporary uploads while libvips keeps their handles cached.
+if (process.platform === 'win32') sharp.cache({ files: 0 });
+
 for (const dir of [UPLOADS_DIR, path.join(UPLOADS_DIR, 'thumbs'), path.join(UPLOADS_DIR, 'medium'), TEMP_DIR]) {
   fs.mkdirSync(dir, { recursive: true, mode: 0o750 });
 }

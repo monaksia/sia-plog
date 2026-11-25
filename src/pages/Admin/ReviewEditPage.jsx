@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import ReviewEditor from './ReviewEditor';
 import LoadError from '../../components/LoadError';
 import useResource from '../../hooks/useResource';
-import { getMovie, getBook, createMovie, createBook, updateMovie, updateBook,
+import { getAdminMovie, getAdminBook, createMovie, createBook, updateMovie, updateBook,
   deleteMovie, deleteBook, uploadMoviePoster, uploadBookCover } from '../../api';
 
 function ReviewEditPage({ type }) {
@@ -15,29 +15,44 @@ function ReviewEditPage({ type }) {
   const [notice, setNotice] = useState('');
   const [coverUrl, setCoverUrl] = useState('');
   const [uploading, setUploading] = useState(false);
-  const load = useCallback(options => isNew ? Promise.resolve(null) : (isMovie ? getMovie : getBook)(slug, options), [slug, isNew, isMovie]);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState('draft');
+  const load = useCallback(options => isNew ? Promise.resolve(null) : (isMovie ? getAdminMovie : getAdminBook)(slug, options), [slug, isNew, isMovie]);
   const { data, loading, error, retry } = useResource(load);
   const item = useMemo(() => data ? { ...data,
     genre: Array.isArray(data.genre) ? data.genre.join(', ') : data.genre || '',
     tags: Array.isArray(data.tags) ? data.tags.join(', ') : data.tags || '',
     cast: Array.isArray(data.cast) ? data.cast.join(', ') : data.cast || '',
   } : null, [data]);
-  useEffect(() => { setCoverUrl(data?.[isMovie ? 'poster' : 'cover'] || ''); setSaveError(''); setNotice(''); }, [data, isMovie]);
+  useEffect(() => {
+    setCoverUrl(data?.[isMovie ? 'poster' : 'cover'] || '');
+    setStatus(data?.status ?? 'draft');
+    setSaveError('');
+    setNotice('');
+  }, [data, isMovie]);
+  const busy = saving || uploading;
   const handleSave = async form => {
-    setSaveError(''); setNotice('');
+    setSaving(true); setSaveError(''); setNotice('');
     try {
       // Cover uploads have their own endpoint; metadata saves must not restore an old cover URL.
       const { poster: _poster, cover: _cover, ...editable } = form;
       if (isNew) {
         const result = await (isMovie ? createMovie : createBook)(editable);
-        navigate(`/admin/${type}s/${result.slug}`, { replace: true });
-      } else { await (isMovie ? updateMovie : updateBook)(slug, editable); setNotice('已保存'); }
+        navigate(`/admin/${type}s/${encodeURIComponent(result.slug)}`, { replace: true });
+      } else {
+        await (isMovie ? updateMovie : updateBook)(slug, editable);
+        setStatus(form.status);
+        setNotice(form.status === 'draft' ? '草稿已保存' : status === 'draft' ? '文章已发布' : '修改已保存');
+      }
     } catch (err) { setSaveError(err.message); }
+    finally { setSaving(false); }
   };
   const handleDelete = async () => {
     if (!confirm('确定删除？此操作不可恢复。')) return;
+    setSaving(true); setSaveError(''); setNotice('');
     try { await (isMovie ? deleteMovie : deleteBook)(slug); navigate(`/admin/${type}s`); }
     catch (err) { setSaveError(err.message); }
+    finally { setSaving(false); }
   };
   const handleUploadCover = async e => {
     const input = e.target, file = input.files[0];
@@ -53,16 +68,18 @@ function ReviewEditPage({ type }) {
   if (loading) return <p>加载中…</p>;
   if (error) return <LoadError error={error} retry={retry} />;
   return <div>
-    <h1>{isNew ? (isMovie ? '新建影评' : '新建书评') : '编辑'}</h1><hr />
+    <h1>{`${isNew ? '新建' : '编辑'}${isMovie ? '影评' : '书评'}`}</h1><hr />
+    {isNew && <p>保存草稿后即可上传{isMovie ? '海报' : '封面'}。</p>}
     {!isNew && <div className="admin-toolbar">
-      <label className="admin-btn admin-btn-sm">{uploading ? '上传中…' : `上传${isMovie ? '海报' : '封面'}`}
-        <input type="file" accept="image/*" onChange={handleUploadCover} disabled={uploading} hidden />
-      </label>
+      <span className="admin-review-status">{status === 'draft' ? '草稿' : '已发布'}</span>
+      <label htmlFor="review-cover">{uploading ? '正在上传…' : `上传${isMovie ? '海报' : '封面'}`}</label>
+      <input id="review-cover" type="file" accept="image/*" onChange={handleUploadCover} disabled={busy} />
       {coverUrl && <img src={coverUrl} alt="封面预览" className="admin-thumb" />}
     </div>}
     {saveError && <p role="alert" className="admin-error">{saveError}</p>}
     {notice && <p role="status">{notice}</p>}
-    <ReviewEditor key={`${type}/${slug}`} type={type} initial={item} onSave={handleSave} onDelete={isNew ? null : handleDelete} />
+    <ReviewEditor key={`${type}/${slug}`} type={type} initial={item} status={status} coverUrl={coverUrl} busy={busy}
+      onSave={handleSave} onDelete={isNew ? null : handleDelete} />
   </div>;
 }
 export default ReviewEditPage;

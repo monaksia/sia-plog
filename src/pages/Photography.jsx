@@ -1,6 +1,7 @@
 import useResource from '../hooks/useResource';
 import LoadError from '../components/LoadError';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getPhotos } from '../api';
 import './Photography.css';
 
@@ -23,10 +24,16 @@ function extractFilters(photos) {
 
 function Photography() {
   const { data, loading, error, retry } = useResource(getPhotos);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const linkedPhoto = searchParams.get('photo');
   const photos = data || [];
   const [lightbox, setLightbox] = useState(null);
   const [visible, setVisible] = useState(false);
   const [filter, setFilter] = useState('all');
+  const dialogRef = useRef(null);
+  const closeRef = useRef(null);
+  const openerId = useRef('');
+  const touchStartX = useRef(null);
 
   useEffect(() => {
     if (!loading && photos.length > 0) {
@@ -48,46 +55,59 @@ function Photography() {
     });
   }, [photos, filter]);
 
-  const photoSources = (p) => p.medium ? `${p.thumb || p.src} ${Math.min(p.width || 2000, 400)}w, ${p.medium} ${Math.min(p.width || 2000, 1000)}w, ${p.src} ${p.width || 2000}w` : undefined;
-
-  const openLightbox = useCallback((index) => setLightbox(index), []);
-  const closeLightbox = useCallback(() => setLightbox(null), []);
-
-  const prev = useCallback((e) => {
-    e.stopPropagation();
-    setLightbox((p) => (p - 1 + filteredPhotos.length) % filteredPhotos.length);
-  }, [filteredPhotos.length]);
-
-  const next = useCallback((e) => {
-    e.stopPropagation();
-    setLightbox((p) => (p + 1) % filteredPhotos.length);
-  }, [filteredPhotos.length]);
-
-  // Keyboard + swipe
   useEffect(() => {
-    if (lightbox === null) return;
-    let touchStartX = 0;
-    const onTouchStart = (e) => { touchStartX = e.touches[0].clientX; };
-    const onTouchEnd = (e) => {
-      const diff = touchStartX - e.changedTouches[0].clientX;
-      if (Math.abs(diff) > 50) {
-        diff > 0 ? next(e) : prev(e);
-      }
-    };
-    const onKey = (e) => {
-      if (e.key === 'Escape') closeLightbox();
-      if (e.key === 'ArrowLeft') prev(e);
-      if (e.key === 'ArrowRight') next(e);
-    };
-    window.addEventListener('keydown', onKey);
-    window.addEventListener('touchstart', onTouchStart, { passive: true });
-    window.addEventListener('touchend', onTouchEnd);
+    if (!linkedPhoto || !data) return;
+    const index = data.findIndex(photo => String(photo.id) === linkedPhoto);
+    if (index < 0) return;
+    openerId.current = `photo-${linkedPhoto}`;
+    setFilter('all');
+    setLightbox(index);
+  }, [linkedPhoto, data]);
+
+  const selectedPhoto = lightbox === null ? null : filteredPhotos[lightbox];
+  const isOpen = Boolean(selectedPhoto);
+  useEffect(() => {
+    if (!isOpen) return;
+    const dialog = dialogRef.current;
+    dialog.showModal();
+    closeRef.current.focus();
     return () => {
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener('touchstart', onTouchStart);
-      window.removeEventListener('touchend', onTouchEnd);
+      dialog.close();
+      document.getElementById(openerId.current)?.focus();
+      touchStartX.current = null;
     };
-  }, [lightbox, prev, next, closeLightbox]);
+  }, [isOpen]);
+
+  const openLightbox = (index, event) => {
+    openerId.current = event.currentTarget.id;
+    setLightbox(index);
+  };
+
+  const closeLightbox = () => {
+    setLightbox(null);
+    if (linkedPhoto) {
+      const params = new URLSearchParams(searchParams);
+      params.delete('photo');
+      setSearchParams(params, { replace: true, preventScrollReset: true });
+    }
+  };
+
+  const moveLightbox = direction => {
+    setLightbox(index => (index + direction + filteredPhotos.length) % filteredPhotos.length);
+  };
+
+  const handleLightboxKey = event => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    moveLightbox(event.key === 'ArrowRight' ? 1 : -1);
+  };
+
+  const handleTouchEnd = event => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - event.changedTouches[0].clientX;
+    touchStartX.current = null;
+    if (Math.abs(diff) > 50) moveLightbox(diff > 0 ? 1 : -1);
+  };
 
   if (loading) {
     return (
@@ -131,9 +151,8 @@ function Photography() {
           {hero && (
             <figure
               className="photo-hero reveal reveal-up"
-              onClick={() => openLightbox(0)}
             >
-              <img src={hero.medium || hero.src} srcSet={photoSources(hero)} sizes="(max-width: 640px) 100vw, 1200px" alt={hero.alt || ''} width={hero.width} height={hero.height} loading="eager" fetchPriority="high" decoding="async" />
+              <PhotoButton photo={hero} index={0} onOpen={openLightbox} sizes="(max-width: 640px) 100vw, 1200px" priority />
               <figcaption className="photo-figcaption">
                 <span className="photo-fig-num">FIG. 01</span>
                 {hero.alt && <span className="photo-fig-title">{hero.alt}</span>}
@@ -152,9 +171,8 @@ function Photography() {
                   key={photo.id || i}
                   className="photo-spread-item reveal reveal-up"
                   style={{ transitionDelay: `${(i + 1) * 100}ms` }}
-                  onClick={() => openLightbox(i + 1)}
                 >
-                  <img src={photo.medium || photo.src} srcSet={photoSources(photo)} sizes="(max-width: 640px) 100vw, 50vw" alt={photo.alt || ''} width={photo.width} height={photo.height} loading="lazy" decoding="async" />
+                  <PhotoButton photo={photo} index={i + 1} onOpen={openLightbox} sizes="(max-width: 640px) 100vw, 50vw" />
                   <figcaption className="photo-figcaption">
                     <span className="photo-fig-num">FIG. {String(i + 2).padStart(2, '0')}</span>
                     {photo.alt && <span className="photo-fig-title">{photo.alt}</span>}
@@ -175,9 +193,8 @@ function Photography() {
                   key={photo.id || i}
                   className="photo-grid-item reveal reveal-up"
                   style={{ transitionDelay: `${(i % 3) * 80}ms` }}
-                  onClick={() => openLightbox(i + 3)}
                 >
-                  <img src={photo.thumb || photo.src} srcSet={photoSources(photo)} sizes="(max-width: 640px) 100vw, 33vw" alt={photo.alt || ''} width={photo.width} height={photo.height} loading="lazy" decoding="async" />
+                  <PhotoButton photo={photo} index={i + 3} onOpen={openLightbox} sizes="(max-width: 640px) 100vw, 33vw" thumbnail />
                   <figcaption className="photo-figcaption">
                     <span className="photo-fig-num">FIG. {String(i + 4).padStart(2, '0')}</span>
                     {photo.alt && <span className="photo-fig-title">{photo.alt}</span>}
@@ -192,55 +209,60 @@ function Photography() {
       )}
 
       {/* Lightbox — enhanced with filmstrip */}
-      <div
-        className={`lightbox${lightbox !== null ? ' open' : ''}`}
-        onClick={closeLightbox}
-        role="dialog"
+      <dialog
+        ref={dialogRef}
+        className="lightbox"
+        onClick={event => { if (event.target === event.currentTarget) closeLightbox(); }}
+        onCancel={event => { event.preventDefault(); closeLightbox(); }}
+        onKeyDown={handleLightboxKey}
+        onTouchStart={event => { touchStartX.current = event.touches[0].clientX; }}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={() => { touchStartX.current = null; }}
         aria-label="Image preview"
       >
-        <button className="lightbox-close" onClick={closeLightbox} aria-label="Close">
+        <button ref={closeRef} type="button" className="lightbox-close" onClick={closeLightbox} aria-label="Close">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </button>
 
-        <button className="lightbox-prev" onClick={prev} aria-label="Previous">
+        <button type="button" className="lightbox-prev" onClick={() => moveLightbox(-1)} aria-label="Previous">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <polyline points="16,4 8,12 16,20" />
           </svg>
         </button>
 
-        <button className="lightbox-next" onClick={next} aria-label="Next">
+        <button type="button" className="lightbox-next" onClick={() => moveLightbox(1)} aria-label="Next">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <polyline points="8,4 16,12 8,20" />
           </svg>
         </button>
 
-        {lightbox !== null && filteredPhotos[lightbox] && (
-          <div className="lightbox-stage" onClick={(e) => e.stopPropagation()}>
+        {selectedPhoto && (
+          <div className="lightbox-stage">
             <img
-              src={filteredPhotos[lightbox].src}
-              alt={filteredPhotos[lightbox].alt || ''}
+              src={selectedPhoto.src}
+              alt={selectedPhoto.alt || ''}
               className="lightbox-img"
             />
 
             {/* Editorial caption panel */}
             <div className="lightbox-caption">
               <div className="caption-line" />
-              {filteredPhotos[lightbox].alt && (
-                <p className="caption-title">{filteredPhotos[lightbox].alt}</p>
+              {selectedPhoto.alt && (
+                <p className="caption-title">{selectedPhoto.alt}</p>
               )}
               <p className="caption-meta">
                 {[
-                  filteredPhotos[lightbox].date_taken,
-                  filteredPhotos[lightbox].location,
-                  filteredPhotos[lightbox].camera,
+                  selectedPhoto.date_taken,
+                  selectedPhoto.location,
+                  selectedPhoto.camera,
                 ].filter(Boolean).join('  ·  ')}
               </p>
-              {filteredPhotos[lightbox].notes && (
-                <p className="caption-notes">{filteredPhotos[lightbox].notes}</p>
+              {selectedPhoto.notes && (
+                <p className="caption-notes">{selectedPhoto.notes}</p>
               )}
-              <p className="caption-counter">
+              <p className="caption-counter" aria-live="polite">
                 FIG. {String(lightbox + 1).padStart(2, '0')} / {filteredPhotos.length}
               </p>
             </div>
@@ -251,8 +273,11 @@ function Photography() {
                 {filteredPhotos.map((p, i) => (
                   <button
                     key={p.id || i}
+                    type="button"
                     className={`filmstrip-thumb${i === lightbox ? ' active' : ''}`}
-                    onClick={(e) => { e.stopPropagation(); setLightbox(i); }}
+                    aria-label={p.alt || `Photo ${i + 1}`}
+                    aria-current={i === lightbox ? 'true' : undefined}
+                    onClick={() => setLightbox(i)}
                   >
                     <img src={p.thumb || p.src} alt="" loading="lazy" />
                   </button>
@@ -261,8 +286,21 @@ function Photography() {
             )}
           </div>
         )}
-      </div>
+      </dialog>
     </div>
+  );
+}
+
+function PhotoButton({ photo, index, onOpen, sizes, priority = false, thumbnail = false }) {
+  const src = (thumbnail ? photo.thumb : photo.medium) || photo.src;
+  const srcSet = photo.medium ? `${photo.thumb || photo.src} ${Math.min(photo.width || 2000, 400)}w, ${photo.medium} ${Math.min(photo.width || 2000, 1000)}w, ${photo.src} ${photo.width || 2000}w` : undefined;
+  return (
+    <button type="button" id={`photo-${photo.id}`} className="photo-open" aria-haspopup="dialog"
+      aria-label={`View photo ${index + 1}${photo.alt ? `: ${photo.alt}` : ''}`}
+      onClick={event => onOpen(index, event)}>
+      <img src={src} srcSet={srcSet} sizes={sizes} alt="" width={photo.width} height={photo.height}
+        loading={priority ? 'eager' : 'lazy'} fetchPriority={priority ? 'high' : undefined} decoding="async" />
+    </button>
   );
 }
 

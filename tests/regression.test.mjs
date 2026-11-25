@@ -165,6 +165,63 @@ test('cover upload validates contents, checks existence and preserves shared ref
   await assert.rejects(fs.access(path.join(process.env.SIA_DATA_DIR, second.data.src.slice(1))));
   assert.deepEqual(await fs.readdir(path.join(process.env.SIA_DATA_DIR, 'tmp')), []);
 });
+test('draft reviews are visible only in admin until published and keep their URLs', async () => {
+  const auth = token();
+  for (const [table, type, coverField] of [['movies', 'movie', 'poster'], ['books', 'book', 'cover']]) {
+    const body = { title: `A ${type} review`, slug: '  ', status: 'draft', review: 'first version' };
+    const created = await request(`/api/${table}`, { method: 'POST', auth, body });
+    assert.equal(created.status, 201);
+    const slug = `a-${type}-review`;
+    assert.equal(created.data.slug, slug);
+    const duplicate = await request(`/api/${table}`, { method: 'POST', auth, body });
+    assert.equal(duplicate.data.slug, `${slug}-2`);
+
+    const detail = `/api/${table}/${slug}`;
+    const adminDetail = `/api/admin/${table}/${slug}`;
+    assert.equal((await request(adminDetail)).status, 401);
+    assert.equal((await request(`/api/admin/${table}`)).status, 401);
+    assert.equal((await request(detail)).status, 404);
+    assert.equal((await request(detail, { auth })).status, 404);
+    assert.ok(!(await request(`/api/${table}`)).data.some(row => row.slug === slug));
+    assert.notEqual((await request('/api/recent')).data[type]?.slug, slug);
+    const adminList = await request(`/api/admin/${table}`, { auth });
+    assert.ok(adminList.data.some(row => row.slug === slug && row.status === 'draft'));
+    const saved = await request(adminDetail, { auth });
+    assert.equal(saved.response.headers.get('cache-control'), 'no-store');
+    assert.equal(saved.data.review, 'first version');
+    assert.equal(saved.data.published_at, null);
+
+    const cover = await request(`${detail}/${coverField}`, { method: 'POST', auth, body: form(await image('webp'), 'cover.webp', 'image/webp') });
+    assert.equal(cover.status, 200);
+    assert.equal((await request(detail)).status, 404);
+    const published = await request(detail, { method: 'PUT', auth, body: { status: 'published', slug: '', review: 'final text' } });
+    assert.equal(published.status, 200);
+    const visible = (await request(detail)).data;
+    assert.equal(visible.slug, slug);
+    assert.equal(visible.status, 'published');
+    assert.equal(visible.review, 'final text');
+    assert.equal(visible[coverField], cover.data.src);
+    assert.ok(visible.published_at);
+    const recent = (await request('/api/recent')).data[type];
+    assert.equal(recent.slug, slug);
+    assert.ok(!Object.hasOwn(recent, 'review'));
+
+    assert.equal((await request(detail, { method: 'PUT', auth, body: { title: 'Updated title' } })).status, 200);
+    assert.equal((await request(detail)).data.published_at, visible.published_at);
+    assert.equal((await request(detail, { method: 'PUT', auth, body: { status: 'draft' } })).status, 400);
+    for (const url of [detail, `${detail}-2`]) await request(url, { method: 'DELETE', auth });
+  }
+});
+test('recent updates show the newest uploaded photo even when another photo is first in the gallery', async () => {
+  assert.equal((await request('/api/recent')).data.photo, null);
+  const older = await upload('webp', { alt: 'Pinned photo', sort_order: '8' });
+  const newer = await upload('webp', { alt: 'New photo' });
+  assert.equal((await request('/api/photos')).data[0].id, older.data.id);
+  const recent = (await request('/api/recent')).data.photo;
+  assert.equal(recent.id, newer.data.id);
+  assert.equal(recent.medium, newer.data.medium);
+  for (const photo of [older.data, newer.data]) await request(`/api/photos/${photo.id}`, { method: 'DELETE', auth: token() });
+});
 test('consistent backup restores database and media; tampered files fail verification', async () => {
   await upload('webp', { alt: 'backed up photo' });
   const result = await createBackup({ dataDir: process.env.SIA_DATA_DIR, audioDir: process.env.SIA_AUDIO_DIR, backupDir: path.join(temp, 'backups') });
@@ -174,7 +231,7 @@ test('consistent backup restores database and media; tampered files fail verific
   await assert.rejects(verifyBackup(result.directory), /checksum mismatch/);
 });
 test('database migrations are versioned and idempotent across restarts', () => {
-  assert.equal(db.prepare('SELECT count(*) AS count FROM schema_migrations').get().count, 2);
+  assert.equal(db.prepare('SELECT count(*) AS count FROM schema_migrations').get().count, 3);
   const child = spawnSync(process.execPath, ['--input-type=module', '-e', "const {default:db}=await import('./server/db.js');db.close();"], { encoding: 'utf8', env: process.env });
   assert.equal(child.status, 0, child.stderr);
 });
